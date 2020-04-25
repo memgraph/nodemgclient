@@ -1,0 +1,14 @@
+{
+  "name": "nodemgclient",
+  "version": "0.0.0",
+  "description": "Node.js mgclient Bindings",
+  "private": true,
+  "dependencies": {
+    "bindings": "~1.2.1",
+    "cmake-js": "^6.1.0"
+  },
+  "scripts": {
+    "test": "node test/example.js",
+    "install": "cmake-js compile"
+  }
+}
