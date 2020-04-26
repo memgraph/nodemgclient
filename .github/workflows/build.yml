@@ -12,9 +12,11 @@ jobs:
         node-version: '12.x'
     - name: Install system dependencies
       run: sudo apt-get install -y git cmake make gcc g++ libssl-dev
-    - name: Install mgclient
+    - name: Download mgclient
+      uses: actions/checkout@master
       with:
           repository: memgraph/mgclient
+    - name: Install mgclient
       run: |
         ls
         cd mgclient
