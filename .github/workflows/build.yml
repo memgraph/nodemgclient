@@ -10,6 +10,20 @@ jobs:
     - uses: actions/setup-node@v1
       with:
         node-version: '12.x'
+    - name: Install system dependencies
+      run: sudo apt-get install -y git cmake make gcc g++ libssl-dev
+    - name: Install mgclient
+      uses: actions/checkout@master
+      with:
+          repository: memgraph/mgclient
+      run: |
+        ls
+        cd mgclient
+        mkdir build
+        cd build
+        cmake ..
+        make
+        sudo make install
     - name: Install and build addon
       working-directory: ./
       run: |
