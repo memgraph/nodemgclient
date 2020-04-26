@@ -6,10 +6,6 @@ jobs:
   build_and_test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - uses: actions/setup-node@v1
-      with:
-        node-version: '12.x'
     - name: Install system dependencies
       run: sudo apt-get install -y git cmake make gcc g++ libssl-dev
     - name: Download mgclient
@@ -18,13 +14,15 @@ jobs:
           repository: memgraph/mgclient
     - name: Install mgclient
       run: |
-        ls
-        cd mgclient
         mkdir build
         cd build
         cmake ..
         make
         sudo make install
+    - uses: actions/checkout@v1
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
     - name: Install and build addon
       working-directory: ./
       run: |
