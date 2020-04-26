@@ -11,7 +11,7 @@ jobs:
     - name: Download mgclient
       uses: actions/checkout@master
       with:
-          repository: memgraph/mgclient
+        repository: memgraph/mgclient
     - name: Install mgclient
       run: |
         mkdir build
@@ -29,6 +29,23 @@ jobs:
     - name: Lint JS code
       run: |
         npm run lint
+    - name: Cache Memgraph Docker image
+      id: cache-memgraph-docker
+      uses: actions/cache@v1
+      with:
+        path: ~/memgraph
+        key: cache-memgraph-v0.50.0-docker-image
+    - name: Download Memgraph Docker image
+      if: steps.cache-memgraph-docker.outputs.cache-hit != 'true'
+      run: |
+        mkdir ~/memgraph
+        curl https://memgraph.com/download/memgraph/v1.0.0/memgraph-1.0.0-community-docker.tar.gz > ~/memgraph/memgraph-docker.tar.gz
+    - name: Load Memgraph Docker image
+      run: |
+        docker load -i ~/memgraph/memgraph-docker.tar.gz
+    - name: Start Memgraph
+      run: |
+        docker run -d -p 7687:7687 memgraph
     - name: Run JS tests
       run: |
         npm run test
