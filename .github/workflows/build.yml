@@ -13,7 +13,6 @@ jobs:
     - name: Install system dependencies
       run: sudo apt-get install -y git cmake make gcc g++ libssl-dev
     - name: Install mgclient
-      uses: actions/checkout@master
       with:
           repository: memgraph/mgclient
       run: |
