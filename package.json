@@ -1,14 +1,40 @@
 {
-  "name": "nodemgclient",
-  "version": "0.0.0",
+  "name": "mgclient",
+  "version": "0.1.0",
   "description": "Node.js mgclient Bindings",
+  "keywords": [
+    "memgraph",
+    "mgclient"
+  ],
+  "homepage": "https://github.com/memgraph/nodemgclient",
+  "license": "Apache-2.0",
   "private": true,
-  "dependencies": {
-    "bindings": "~1.2.1",
-    "cmake-js": "^6.1.0"
+  "author": "Marko Budiselic <marko.budiselic@memgraph.com>",
+  "contributors": [],
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/memgraph/nodemgclient.git"
   },
   "scripts": {
-    "test": "node test/example.js",
-    "install": "cmake-js compile"
+    "install": "npx cmake-js compile",
+    "lint": "npx eslint -c .eslintrc.js './{src,test,lib}/**/*.js'",
+    "lint:fix": "npx eslint -c .eslintrc.js --fix './{src,test,lib}/**/*.js'",
+    "test": "npx jest"
+  },
+  "dependencies": {
+    "bindings": "~1.2.1"
+  },
+  "devDependencies": {
+    "cmake-js": "^6.1.0",
+    "eslint": "^6.8.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-jest": "^23.8.2",
+    "eslint-plugin-prettier": "^3.1.3",
+    "jest": "^25.4.0",
+    "node-addon-api": "^1.0.0",
+    "prettier": "^2.0.5",
+    "typescript": "^3.8.3"
   }
 }
