@@ -22,15 +22,14 @@
 class Connection : public Napi::ObjectWrap<Connection> {
  public:
   static Napi::Object Init(Napi::Env env, Napi::Object exports);
-  Connection(const Napi::CallbackInfo& info);
+  Connection(const Napi::CallbackInfo &info);
   ~Connection();
 
  private:
-
   static Napi::FunctionReference constructor;
-  Napi::Value Execute(const Napi::CallbackInfo& info);
+  Napi::Value Execute(const Napi::CallbackInfo &info);
 
-  mg_session* session_{nullptr};
+  mg_session *session_{nullptr};
 };
 
 #endif
