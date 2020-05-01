@@ -8,12 +8,17 @@ set(C_STANDARD_REQUIRED ON)
 set(CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+add_library(project_warnings INTERFACE)
+include(cmake/CompilerWarnings.cmake)
+set_project_warnings(project_warnings)
+
 # Define the addon.
 include_directories(${CMAKE_JS_INC})
-set(SOURCE_FILES src/addon.cpp src/connection.cpp)
+set(SOURCE_FILES src/addon.cpp src/connection.cpp src/glue.cpp)
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
-target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB} mgclient)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_JS_LIB} mgclient project_warnings)
+target_compile_options(${PROJECT_NAME} PRIVATE "-fno-exceptions")
 
 # Include N-API wrappers.
 execute_process(COMMAND node -p "require('node-addon-api').include"
@@ -21,6 +26,10 @@ execute_process(COMMAND node -p "require('node-addon-api').include"
                 OUTPUT_VARIABLE NODE_ADDON_API_DIR)
 string(REPLACE "\n" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
 string(REPLACE "\"" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
-target_include_directories(${PROJECT_NAME} PRIVATE ${NODE_ADDON_API_DIR})
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${NODE_ADDON_API_DIR})
 
 add_definitions(-DNAPI_VERSION=3)
+# Cpp exceptions are disabled because the addon has to work with C primitives.
+# Any throw increases a chance for a memory leak because there is no room for
+# proper cleanup.
+add_definitions(-DNAPI_DISABLE_CPP_EXCEPTIONS)

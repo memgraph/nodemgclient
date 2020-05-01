@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NODEMGCLIENT_CONNECTION_HPP
-#define NODEMGCLIENT_CONNECTION_HPP
-
 #include <napi.h>
 
 #include <mgclient.h>
@@ -31,5 +28,3 @@ class Connection : public Napi::ObjectWrap<Connection> {
 
   mg_session *session_{nullptr};
 };
-
-#endif

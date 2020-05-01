@@ -12,19 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const memgraph = require('../lib');
-const query = require('./queries');
+#include <napi.h>
 
-test('Connect to Memgraph and execute basic queries', () => {
-  const connection = memgraph.connect({ host: 'localhost', port: 7687 });
-  expect(connection).toBeDefined();
-  connection.execute(query.DELETE_ALL);
-  connection.execute(query.CREATE_TRIANGLE);
-  const nodesNo = connection.execute(query.COUNT_NODES);
-  expect(nodesNo[0][0]).toEqual(3);
-  const edgesNo = connection.execute(query.COUNT_EDGES);
-  expect(edgesNo[0][0]).toEqual(3);
-  expect(() => {
-    connection.execute('QUERY');
-  }).toThrow();
-});
+#include <mgclient.h>
+
+[[nodiscard]] std::optional<Napi::Value> MgListToNapiArray(
+    const Napi::Env &env, const mg_list *input_list);
+
+[[nodiscard]] std::optional<Napi::Value> MgValueToNapiValue(
+    const Napi::Env &env, const mg_value *input_value);

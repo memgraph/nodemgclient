@@ -15,14 +15,17 @@
 #include <iostream>
 
 #include "connection.hpp"
+#include "glue.hpp"
+#include "message.hpp"
+
+Napi::FunctionReference Connection::constructor;
 
 Connection::~Connection() {
   if (session_) {
     mg_session_destroy(session_);
+    session_ = nullptr;
   }
 }
-
-Napi::FunctionReference Connection::constructor;
 
 Napi::Object Connection::Init(Napi::Env env, Napi::Object exports) {
   Napi::HandleScope scope(env);
@@ -39,26 +42,18 @@ Napi::Object Connection::Init(Napi::Env env, Napi::Object exports) {
 
 Connection::Connection(const Napi::CallbackInfo &info)
     : Napi::ObjectWrap<Connection>(info) {
+  // Read connection parameters and establish connection if possible connection.
   Napi::Env env = info.Env();
-  if (info.Length() < 1) {
-    Napi::TypeError::New(env,
-                         "Wrong number of arguments. One JS object "
-                         "containing connection parameters is allowed.")
+  if (info.Length() < 1 || !info[0].IsObject()) {
+    Napi::TypeError::New(env, NODEMG_MSG_WRONG_CONN_ARG)
         .ThrowAsJavaScriptException();
     return;
   }
-  if (!info[0].IsObject()) {
-    Napi::TypeError::New(env,
-                         "Wrong argument type. One JS object "
-                         "containing connection parameters is allowed.")
-        .ThrowAsJavaScriptException();
-    return;
-  }
+  // TODO(gitbuda): Deal with all possible connection parameters.
   Napi::Object params = info[0].As<Napi::Object>();
-
   mg_session_params *mg_params = mg_session_params_make();
   if (!params) {
-    Napi::TypeError::New(env, "Failed to allocate parameters.")
+    Napi::Error::New(env, NODEMG_MSG_CONN_PARAMS_ALLOC_FAIL)
         .ThrowAsJavaScriptException();
     return;
   }
@@ -67,21 +62,45 @@ Connection::Connection(const Napi::CallbackInfo &info)
   mg_session_params_set_port(mg_params,
                              params.Get("port").ToNumber().Uint32Value());
   mg_session_params_set_sslmode(mg_params, MG_SSLMODE_REQUIRE);
-
   int mg_status = mg_connect(mg_params, &session_);
   mg_session_params_destroy(mg_params);
   if (mg_status < 0) {
-    mg_session_destroy(session_);
-    Napi::TypeError::New(env, "Failed to connect.")
+    Napi::TypeError::New(env, NODEMG_MSG_CONN_FAIL)
         .ThrowAsJavaScriptException();
+    mg_session_destroy(session_);
+    session_ = nullptr;
     return;
   }
 }
 
 Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
-  Napi::TypeError::New(env, "Not yet implemented.")
-      .ThrowAsJavaScriptException();
-  return env.Null();
+
+  if (info.Length() != 1) {
+    Napi::TypeError::New(env, NODEMG_MSG_WRONG_EXECUTE_ARG)
+        .ThrowAsJavaScriptException();
+    return env.Null();
+  }
+  auto query = info[0].As<Napi::String>().Utf8Value();
+
+  // TODO(gitbuda): Pass query parameters.
+  // TODO(gitbuda): Deal with columns.
+
+  int status = mg_session_run(session_, query.c_str(), NULL, NULL);
+  if (status != 0) {
+    Napi::Error::New(env, NODEMG_MSG_RUN_FAIL).ThrowAsJavaScriptException();
+    return env.Null();
+  }
+  mg_result *result;
+  uint32_t index = 0;
+  auto data = Napi::Array::New(env);
+  while ((status = mg_session_pull(session_, &result)) == 1) {
+    auto row = MgListToNapiArray(env, mg_result_row(result));
+    if (!row) {
+      return env.Null();
+    }
+    data[index++] = *row;
+  }
+  return data;
 }
 
