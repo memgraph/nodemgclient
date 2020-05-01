@@ -12,19 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const memgraph = require('../lib');
-const query = require('./queries');
-
-test('Connect to Memgraph and execute basic queries', () => {
-  const connection = memgraph.connect({ host: 'localhost', port: 7687 });
-  expect(connection).toBeDefined();
-  connection.execute(query.DELETE_ALL);
-  connection.execute(query.CREATE_TRIANGLE);
-  const nodesNo = connection.execute(query.COUNT_NODES);
-  expect(nodesNo[0][0]).toEqual(3);
-  const edgesNo = connection.execute(query.COUNT_EDGES);
-  expect(edgesNo[0][0]).toEqual(3);
-  expect(() => {
-    connection.execute('QUERY');
-  }).toThrow();
-});
+constexpr char NODEMG_MSG_WRONG_CONN_ARG[] =
+    "Wrong connection argument. One JavaScript object containing connection "
+    "parameters is allowed.";
+constexpr char NODEMG_MSG_CONN_PARAMS_ALLOC_FAIL[] =
+    "Failed to allocate connection parameters.";
+constexpr char NODEMG_MSG_CONN_FAIL[] = "Connection failed.";
+constexpr char NODEMG_MSG_TYPE_ERROR[] = "A value of unknown type encountered.";
+constexpr char NODEMG_MSG_WRONG_EXECUTE_ARG[] = "Wrong execute arguments.";
+constexpr char NODEMG_MSG_RUN_FAIL[] = "Fail to execute query (run command).";

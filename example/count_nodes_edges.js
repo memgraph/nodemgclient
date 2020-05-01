@@ -13,18 +13,12 @@
 // limitations under the License.
 
 const memgraph = require('../lib');
-const query = require('./queries');
+const query = require('../test/queries');
 
-test('Connect to Memgraph and execute basic queries', () => {
-  const connection = memgraph.connect({ host: 'localhost', port: 7687 });
-  expect(connection).toBeDefined();
-  connection.execute(query.DELETE_ALL);
-  connection.execute(query.CREATE_TRIANGLE);
-  const nodesNo = connection.execute(query.COUNT_NODES);
-  expect(nodesNo[0][0]).toEqual(3);
-  const edgesNo = connection.execute(query.COUNT_EDGES);
-  expect(edgesNo[0][0]).toEqual(3);
-  expect(() => {
-    connection.execute('QUERY');
-  }).toThrow();
-});
+const connection = memgraph.connect({ host: 'localhost', port: 7687 });
+
+const nodesNo = connection.execute(query.COUNT_NODES);
+const edgeNo = connection.execute(query.COUNT_EDGES);
+
+console.log('Number of Nodes: ' + nodesNo[0][0]);
+console.log('Number of Edges: ' + edgeNo[0][0]);
