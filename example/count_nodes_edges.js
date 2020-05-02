@@ -18,7 +18,7 @@ const query = require('../test/queries');
 const connection = memgraph.connect({ host: 'localhost', port: 7687 });
 
 const nodesNo = connection.execute(query.COUNT_NODES);
-const edgeNo = connection.execute(query.COUNT_EDGES);
+const edgesNo = connection.execute(query.COUNT_EDGES);
 
 console.log('Number of Nodes: ' + nodesNo[0][0]);
-console.log('Number of Edges: ' + edgeNo[0][0]);
+console.log('Number of Edges: ' + edgesNo[0][0]);
