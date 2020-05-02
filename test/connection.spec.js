@@ -28,3 +28,20 @@ test('Connect to Memgraph and execute basic queries', () => {
     connection.execute('QUERY');
   }).toThrow();
 });
+
+test('Create and fetch a node', () => {
+  const connection = memgraph.connect({ host: 'localhost', port: 7687 });
+  expect(connection).toBeDefined();
+  connection.execute(query.DELETE_ALL);
+  connection.execute(query.CREATE_RICH_NODE);
+  const node = connection.execute(query.NODES)[0][0];
+  expect(node.id).toBeGreaterThanOrEqual(0);
+  expect(node.labels).toContain('Label1');
+  expect(node.labels).toContain('Label2');
+  expect(node.properties.prop0).toEqual(undefined);
+  expect(node.properties.prop1).toEqual(true);
+  expect(node.properties.prop2).toEqual(false);
+  expect(node.properties.prop3).toEqual(10);
+  expect(node.properties.prop4).toEqual(100.0);
+  expect(node.properties.prop5).toEqual('test');
+});

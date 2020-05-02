@@ -13,6 +13,8 @@
 // limitations under the License.
 
 module.exports = Object.freeze({
+  NODES: `MATCH (n) RETURN n;`,
+  NODE_EDGE_IDS: `MATCH (n)-[e]->(m) RETURN n.id, e.id;`,
   COUNT_NODES: `MATCH (n) RETURN count(n) AS nodes_no;`,
   COUNT_EDGES: `MATCH ()-[e]->() RETURN count(e) AS edges_no;`,
   DELETE_ALL: `MATCH (n) DETACH DELETE n;`,
@@ -23,4 +25,12 @@ module.exports = Object.freeze({
           (n1)-[e1:Edge {id: 1}]->(n2),
           (n2)-[e2:Edge {id: 2}]->(n3),
           (n3)-[e3:Edge {id: 3}]->(n1);`,
+  CREATE_RICH_NODE: `
+    CREATE (n:Label1:Label2
+            {prop0: Null,
+             prop1: True,
+             prop2: False,
+             prop3: 10,
+             prop4: 100.0,
+             prop5: "test"})`,
 });

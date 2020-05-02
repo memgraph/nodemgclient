@@ -49,6 +49,31 @@ std::optional<Napi::Value> MgMapToNapiObject(const Napi::Env &env,
   return output_object;
 }
 
+std::optional<Napi::Value> MgNodeToNapiNode(const Napi::Env &env,
+                                            const mg_node *input_node) {
+  // TODO(gitbuda): BigInt should be here but it's still experimental.
+  auto node_id = Napi::Number::New(env, mg_node_id(input_node));
+
+  auto label_count = mg_node_label_count(input_node);
+  auto node_labels = Napi::Array::New(env, label_count);
+  for (uint32_t label_index = 0; label_index < label_count; ++label_index) {
+    auto label =
+        MgStringToNapiString(env, mg_node_label_at(input_node, label_index));
+    node_labels[label_index] = label;
+  }
+
+  auto node_properties = MgMapToNapiObject(env, mg_node_properties(input_node));
+  if (!node_properties) {
+    return std::nullopt;
+  }
+
+  Napi::Object output_node = Napi::Object::New(env);
+  output_node.Set("id", node_id);
+  output_node.Set("labels", node_labels);
+  output_node.Set("properties", *node_properties);
+  return output_node;
+}
+
 std::optional<Napi::Value> MgValueToNapiValue(const Napi::Env &env,
                                               const mg_value *input_value) {
   switch (mg_value_get_type(input_value)) {
@@ -68,9 +93,7 @@ std::optional<Napi::Value> MgValueToNapiValue(const Napi::Env &env,
     case MG_VALUE_TYPE_MAP:
       return MgMapToNapiObject(env, mg_value_map(input_value));
     case MG_VALUE_TYPE_NODE:
-      Napi::Error::New(env, "Fetching of nodes not yet implemented.")
-          .ThrowAsJavaScriptException();
-      return std::nullopt;
+      return MgNodeToNapiNode(env, mg_value_node(input_value));
     case MG_VALUE_TYPE_RELATIONSHIP:
       Napi::Error::New(env, "Fetching of edges not yet implemented.")
           .ThrowAsJavaScriptException();

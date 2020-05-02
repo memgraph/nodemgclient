@@ -18,6 +18,6 @@ const query = require('../test/queries');
 const connection = memgraph.connect({ host: 'localhost', port: 7687 });
 
 connection.execute(query.DELETE_ALL);
-connection.execute(query.CREATE_TRIANGLE);
+connection.execute(query.CREATE_RICH_NODE);
 
-console.log(connection.execute(query.NODE_EDGE_IDS));
+console.log(connection.execute(query.NODES));
