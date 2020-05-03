@@ -15,6 +15,8 @@
 const memgraph = require('../lib');
 const query = require('./queries');
 
+// TODO(gitbud): Figure out why sometimes test SEGFAULT.
+
 test('Connect to Memgraph and execute basic queries', () => {
   const connection = memgraph.connect({ host: 'localhost', port: 7687 });
   expect(connection).toBeDefined();
@@ -43,5 +45,20 @@ test('Create and fetch a node', () => {
   expect(node.properties.prop2).toEqual(false);
   expect(node.properties.prop3).toEqual(10);
   expect(node.properties.prop4).toEqual(100.0);
+  expect(node.properties.prop5).toEqual('test');
+});
+
+test('Create and fetch a relationship', () => {
+  const connection = memgraph.connect({ host: 'localhost', port: 7687 });
+  expect(connection).toBeDefined();
+  connection.execute(query.DELETE_ALL);
+  connection.execute(query.CREATE_RICH_EDGE);
+  const node = connection.execute(query.EDGES)[0][0];
+  expect(node.id).toBeGreaterThanOrEqual(0);
+  expect(node.type).toContain('Type');
+  expect(node.properties.prop1).toEqual(true);
+  expect(node.properties.prop2).toEqual(false);
+  expect(node.properties.prop3).toEqual(1);
+  expect(node.properties.prop4).toEqual(2.0);
   expect(node.properties.prop5).toEqual('test');
 });

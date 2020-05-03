@@ -17,7 +17,7 @@
 #include <mgclient.h>
 
 [[nodiscard]] std::optional<Napi::Value> MgListToNapiArray(
-    const Napi::Env &env, const mg_list *input_list);
+    Napi::Env env, const mg_list *input_list);
 
 [[nodiscard]] std::optional<Napi::Value> MgValueToNapiValue(
-    const Napi::Env &env, const mg_value *input_value);
+    Napi::Env env, const mg_value *input_value);

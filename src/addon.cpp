@@ -16,8 +16,14 @@
 
 #include "connection.hpp"
 
-Napi::Object InitAll(Napi::Env env, Napi::Object exports) {
-  return Connection::Init(env, exports);
+Napi::Object CreateConnection(const Napi::CallbackInfo &info) {
+  return Connection::NewInstance(info.Env(), info[0]);
+}
+
+Napi::Object InitAll(Napi::Env env, [[maybe_unused]] Napi::Object exports) {
+  Napi::Object new_exports =
+      Napi::Function::New(env, CreateConnection, "Connection");
+  return Connection::Init(env, new_exports);
 }
 
 NODE_API_MODULE(addon, InitAll)
