@@ -15,6 +15,8 @@
 const memgraph = require('../lib');
 const query = require('./queries');
 
+// TODO(gitbud): Figure out why sometimes test SEGFAULT.
+
 test('Connect to Memgraph and execute basic queries', () => {
   const connection = memgraph.connect({ host: 'localhost', port: 7687 });
   expect(connection).toBeDefined();

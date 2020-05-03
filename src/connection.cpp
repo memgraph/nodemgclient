@@ -82,10 +82,10 @@ Napi::Object Connection::NewInstance(Napi::Env env, Napi::Value params) {
 
 Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
-  Napi::HandleScope scope(env);
+  Napi::EscapableHandleScope scope(env);
 
   if (info.Length() != 1) {
-    Napi::TypeError::New(env, NODEMG_MSG_WRONG_EXECUTE_ARG)
+    Napi::Error::New(env, NODEMG_MSG_WRONG_EXECUTE_ARG)
         .ThrowAsJavaScriptException();
     return env.Null();
   }
@@ -105,10 +105,10 @@ Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
   while ((status = mg_session_pull(session_, &result)) == 1) {
     auto row = MgListToNapiArray(env, mg_result_row(result));
     if (!row) {
-      return env.Null();
+      return scope.Escape(napi_value(env.Null()));
     }
     data[index++] = *row;
   }
-  return data;
+  return scope.Escape(napi_value(data));
 }
 

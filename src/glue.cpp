@@ -15,14 +15,18 @@
 #include "glue.hpp"
 #include "message.hpp"
 
-Napi::Value MgStringToNapiString(const Napi::Env &env,
-                                 const mg_string *input_string) {
-  return Napi::String::New(env, mg_string_data(input_string),
-                           mg_string_size(input_string));
+Napi::Value MgStringToNapiString(Napi::Env env, const mg_string *input_string) {
+  Napi::EscapableHandleScope scope(env);
+
+  Napi::Value output_string = Napi::String::New(
+      env, mg_string_data(input_string), mg_string_size(input_string));
+  return scope.Escape(napi_value(output_string));
 }
 
-std::optional<Napi::Value> MgListToNapiArray(const Napi::Env &env,
+std::optional<Napi::Value> MgListToNapiArray(Napi::Env env,
                                              const mg_list *input_list) {
+  Napi::EscapableHandleScope scope(env);
+
   auto input_list_size = mg_list_size(input_list);
   auto output_list = Napi::Array::New(env, input_list_size);
   for (uint32_t index = 0; index < input_list_size; ++index) {
@@ -32,11 +36,13 @@ std::optional<Napi::Value> MgListToNapiArray(const Napi::Env &env,
     }
     output_list[index] = *value;
   }
-  return output_list;
+  return scope.Escape(napi_value(output_list));
 }
 
-std::optional<Napi::Value> MgMapToNapiObject(const Napi::Env &env,
+std::optional<Napi::Value> MgMapToNapiObject(Napi::Env env,
                                              const mg_map *input_map) {
+  Napi::EscapableHandleScope scope(env);
+
   Napi::Object output_object = Napi::Object::New(env);
   for (uint32_t i = 0; i < mg_map_size(input_map); ++i) {
     auto key = MgStringToNapiString(env, mg_map_key_at(input_map, i));
@@ -46,11 +52,13 @@ std::optional<Napi::Value> MgMapToNapiObject(const Napi::Env &env,
     }
     output_object.Set(key, *value);
   }
-  return output_object;
+  return scope.Escape(napi_value(output_object));
 }
 
-std::optional<Napi::Value> MgNodeToNapiNode(const Napi::Env &env,
+std::optional<Napi::Value> MgNodeToNapiNode(Napi::Env env,
                                             const mg_node *input_node) {
+  Napi::EscapableHandleScope scope(env);
+
   // TODO(gitbuda): BigInt should be here but it's still experimental.
   auto node_id = Napi::Number::New(env, mg_node_id(input_node));
 
@@ -71,11 +79,13 @@ std::optional<Napi::Value> MgNodeToNapiNode(const Napi::Env &env,
   output_node.Set("id", node_id);
   output_node.Set("labels", node_labels);
   output_node.Set("properties", *node_properties);
-  return output_node;
+  return scope.Escape(napi_value(output_node));
 }
 
 std::optional<Napi::Value> MgRelationshipToNapiRelationship(
-    const Napi::Env &env, const mg_relationship *input_relationship) {
+    Napi::Env env, const mg_relationship *input_relationship) {
+  Napi::EscapableHandleScope scope(env);
+
   // TODO(gitbuda): BigInt should be here but it's still experimental.
   auto relationship_id =
       Napi::Number::New(env, mg_relationship_id(input_relationship));
@@ -99,32 +109,57 @@ std::optional<Napi::Value> MgRelationshipToNapiRelationship(
   output_relationship.Set("endNodeId", relationship_end_node_id);
   output_relationship.Set("type", relationship_type);
   output_relationship.Set("properties", *relationship_properties);
-  return output_relationship;
+  return scope.Escape(napi_value(output_relationship));
 }
 
-std::optional<Napi::Value> MgValueToNapiValue(const Napi::Env &env,
+std::optional<Napi::Value> MgValueToNapiValue(Napi::Env env,
                                               const mg_value *input_value) {
+  Napi::EscapableHandleScope scope(env);
   switch (mg_value_get_type(input_value)) {
     case MG_VALUE_TYPE_NULL:
-      return env.Null();
+      return scope.Escape(napi_value(env.Null()));
     case MG_VALUE_TYPE_BOOL:
-      return Napi::Boolean::New(env, mg_value_bool(input_value));
+      return scope.Escape(
+          napi_value(Napi::Boolean::New(env, mg_value_bool(input_value))));
     case MG_VALUE_TYPE_INTEGER:
       // TODO(gitbuda): BigInt should be here but it's still experimental.
-      return Napi::Number::New(env, mg_value_integer(input_value));
+      return scope.Escape(
+          napi_value(Napi::Number::New(env, mg_value_integer(input_value))));
     case MG_VALUE_TYPE_FLOAT:
-      return Napi::Number::New(env, mg_value_float(input_value));
+      return scope.Escape(
+          napi_value(Napi::Number::New(env, mg_value_float(input_value))));
     case MG_VALUE_TYPE_STRING:
-      return MgStringToNapiString(env, mg_value_string(input_value));
-    case MG_VALUE_TYPE_LIST:
-      return MgListToNapiArray(env, mg_value_list(input_value));
-    case MG_VALUE_TYPE_MAP:
-      return MgMapToNapiObject(env, mg_value_map(input_value));
-    case MG_VALUE_TYPE_NODE:
-      return MgNodeToNapiNode(env, mg_value_node(input_value));
-    case MG_VALUE_TYPE_RELATIONSHIP:
-      return MgRelationshipToNapiRelationship(
+      return scope.Escape(
+          napi_value(MgStringToNapiString(env, mg_value_string(input_value))));
+    case MG_VALUE_TYPE_LIST: {
+      auto list_value = MgListToNapiArray(env, mg_value_list(input_value));
+      if (!list_value) {
+        return std::nullopt;
+      }
+      return scope.Escape(napi_value(*list_value));
+    }
+    case MG_VALUE_TYPE_MAP: {
+      auto map_value = MgMapToNapiObject(env, mg_value_map(input_value));
+      if (!map_value) {
+        return std::nullopt;
+      }
+      return scope.Escape(napi_value(*map_value));
+    }
+    case MG_VALUE_TYPE_NODE: {
+      auto node_value = MgNodeToNapiNode(env, mg_value_node(input_value));
+      if (!node_value) {
+        return std::nullopt;
+      }
+      return scope.Escape(napi_value(*node_value));
+    }
+    case MG_VALUE_TYPE_RELATIONSHIP: {
+      auto relationship_value = MgRelationshipToNapiRelationship(
           env, mg_value_relationship(input_value));
+      if (!relationship_value) {
+        return std::nullopt;
+      }
+      return scope.Escape(napi_value(*relationship_value));
+    }
     case MG_VALUE_TYPE_PATH:
       Napi::Error::New(env, "Fetching of paths not yet implemented.")
           .ThrowAsJavaScriptException();
