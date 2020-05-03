@@ -19,6 +19,7 @@
 class Connection : public Napi::ObjectWrap<Connection> {
  public:
   static Napi::Object Init(Napi::Env env, Napi::Object exports);
+  static Napi::Object NewInstance(Napi::Env env, Napi::Value params);
   Connection(const Napi::CallbackInfo &info);
   ~Connection();
 

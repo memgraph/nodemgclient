@@ -19,5 +19,7 @@ const connection = memgraph.connect({ host: 'localhost', port: 7687 });
 
 connection.execute(query.DELETE_ALL);
 connection.execute(query.CREATE_RICH_NODE);
+connection.execute(query.CREATE_RICH_EDGE);
 
 console.log(connection.execute(query.NODES));
+console.log(connection.execute(query.EDGES));

@@ -44,6 +44,7 @@ Connection::Connection(const Napi::CallbackInfo &info)
     : Napi::ObjectWrap<Connection>(info) {
   // Read connection parameters and establish connection if possible connection.
   Napi::Env env = info.Env();
+  Napi::HandleScope scope(env);
   if (info.Length() < 1 || !info[0].IsObject()) {
     Napi::TypeError::New(env, NODEMG_MSG_WRONG_CONN_ARG)
         .ThrowAsJavaScriptException();
@@ -73,8 +74,15 @@ Connection::Connection(const Napi::CallbackInfo &info)
   }
 }
 
+Napi::Object Connection::NewInstance(Napi::Env env, Napi::Value params) {
+  Napi::EscapableHandleScope scope(env);
+  Napi::Object obj = constructor.New({params});
+  return scope.Escape(napi_value(obj)).ToObject();
+}
+
 Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
+  Napi::HandleScope scope(env);
 
   if (info.Length() != 1) {
     Napi::TypeError::New(env, NODEMG_MSG_WRONG_EXECUTE_ARG)

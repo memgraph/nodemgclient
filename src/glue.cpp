@@ -74,6 +74,34 @@ std::optional<Napi::Value> MgNodeToNapiNode(const Napi::Env &env,
   return output_node;
 }
 
+std::optional<Napi::Value> MgRelationshipToNapiRelationship(
+    const Napi::Env &env, const mg_relationship *input_relationship) {
+  // TODO(gitbuda): BigInt should be here but it's still experimental.
+  auto relationship_id =
+      Napi::Number::New(env, mg_relationship_id(input_relationship));
+  auto relationship_start_node_id =
+      Napi::Number::New(env, mg_relationship_start_id(input_relationship));
+  auto relationship_end_node_id =
+      Napi::Number::New(env, mg_relationship_end_id(input_relationship));
+
+  auto relationship_type =
+      MgStringToNapiString(env, mg_relationship_type(input_relationship));
+
+  auto relationship_properties =
+      MgMapToNapiObject(env, mg_relationship_properties(input_relationship));
+  if (!relationship_properties) {
+    return std::nullopt;
+  }
+
+  Napi::Object output_relationship = Napi::Object::New(env);
+  output_relationship.Set("id", relationship_id);
+  output_relationship.Set("startNodeId", relationship_start_node_id);
+  output_relationship.Set("endNodeId", relationship_end_node_id);
+  output_relationship.Set("type", relationship_type);
+  output_relationship.Set("properties", *relationship_properties);
+  return output_relationship;
+}
+
 std::optional<Napi::Value> MgValueToNapiValue(const Napi::Env &env,
                                               const mg_value *input_value) {
   switch (mg_value_get_type(input_value)) {
@@ -95,9 +123,8 @@ std::optional<Napi::Value> MgValueToNapiValue(const Napi::Env &env,
     case MG_VALUE_TYPE_NODE:
       return MgNodeToNapiNode(env, mg_value_node(input_value));
     case MG_VALUE_TYPE_RELATIONSHIP:
-      Napi::Error::New(env, "Fetching of edges not yet implemented.")
-          .ThrowAsJavaScriptException();
-      return std::nullopt;
+      return MgRelationshipToNapiRelationship(
+          env, mg_value_relationship(input_value));
     case MG_VALUE_TYPE_PATH:
       Napi::Error::New(env, "Fetching of paths not yet implemented.")
           .ThrowAsJavaScriptException();
