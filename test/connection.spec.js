@@ -23,9 +23,9 @@ test('Connect to Memgraph and execute basic queries', () => {
   connection.execute(query.DELETE_ALL);
   connection.execute(query.CREATE_TRIANGLE);
   const nodesNo = connection.execute(query.COUNT_NODES);
-  expect(nodesNo[0][0]).toEqual(3);
+  expect(nodesNo[0][0]).toEqual(3n);
   const edgesNo = connection.execute(query.COUNT_EDGES);
-  expect(edgesNo[0][0]).toEqual(3);
+  expect(edgesNo[0][0]).toEqual(3n);
   expect(() => {
     connection.execute('QUERY');
   }).toThrow();
@@ -43,7 +43,7 @@ test('Create and fetch a node', () => {
   expect(node.properties.prop0).toEqual(undefined);
   expect(node.properties.prop1).toEqual(true);
   expect(node.properties.prop2).toEqual(false);
-  expect(node.properties.prop3).toEqual(10);
+  expect(node.properties.prop3).toEqual(10n);
   expect(node.properties.prop4).toEqual(100.0);
   expect(node.properties.prop5).toEqual('test');
 });
@@ -58,7 +58,7 @@ test('Create and fetch a relationship', () => {
   expect(node.type).toContain('Type');
   expect(node.properties.prop1).toEqual(true);
   expect(node.properties.prop2).toEqual(false);
-  expect(node.properties.prop3).toEqual(1);
+  expect(node.properties.prop3).toEqual(1n);
   expect(node.properties.prop4).toEqual(2.0);
   expect(node.properties.prop5).toEqual('test');
 });
