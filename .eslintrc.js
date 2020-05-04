@@ -9,6 +9,7 @@ module.exports = {
   'extends': [
     'google',
     'eslint:recommended',
+    'plugin:node/recommended',
     'plugin:prettier/recommended',
   ],
   'globals': {
@@ -16,7 +17,7 @@ module.exports = {
     'SharedArrayBuffer': 'readonly',
   },
   'parserOptions': {
-    'ecmaVersion': 2018,
+    'ecmaVersion': 2020,
     'sourceType': 'module',
   },
   'plugins': ['prettier', 'jest'],

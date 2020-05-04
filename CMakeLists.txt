@@ -28,7 +28,8 @@ string(REPLACE "\n" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
 string(REPLACE "\"" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${NODE_ADDON_API_DIR})
 
-add_definitions(-DNAPI_VERSION=3)
+# Added because of BigInt support.
+add_definitions(-DNAPI_EXPERIMENTAL)
 # Cpp exceptions are disabled because the addon has to work with C primitives.
 # Any throw increases a chance for a memory leak because there is no room for
 # proper cleanup.

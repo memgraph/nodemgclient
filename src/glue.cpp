@@ -59,8 +59,7 @@ std::optional<Napi::Value> MgNodeToNapiNode(Napi::Env env,
                                             const mg_node *input_node) {
   Napi::EscapableHandleScope scope(env);
 
-  // TODO(gitbuda): BigInt should be here but it's still experimental.
-  auto node_id = Napi::Number::New(env, mg_node_id(input_node));
+  auto node_id = Napi::BigInt::New(env, mg_node_id(input_node));
 
   auto label_count = mg_node_label_count(input_node);
   auto node_labels = Napi::Array::New(env, label_count);
@@ -86,13 +85,12 @@ std::optional<Napi::Value> MgRelationshipToNapiRelationship(
     Napi::Env env, const mg_relationship *input_relationship) {
   Napi::EscapableHandleScope scope(env);
 
-  // TODO(gitbuda): BigInt should be here but it's still experimental.
   auto relationship_id =
-      Napi::Number::New(env, mg_relationship_id(input_relationship));
+      Napi::BigInt::New(env, mg_relationship_id(input_relationship));
   auto relationship_start_node_id =
-      Napi::Number::New(env, mg_relationship_start_id(input_relationship));
+      Napi::BigInt::New(env, mg_relationship_start_id(input_relationship));
   auto relationship_end_node_id =
-      Napi::Number::New(env, mg_relationship_end_id(input_relationship));
+      Napi::BigInt::New(env, mg_relationship_end_id(input_relationship));
 
   auto relationship_type =
       MgStringToNapiString(env, mg_relationship_type(input_relationship));
@@ -122,9 +120,8 @@ std::optional<Napi::Value> MgValueToNapiValue(Napi::Env env,
       return scope.Escape(
           napi_value(Napi::Boolean::New(env, mg_value_bool(input_value))));
     case MG_VALUE_TYPE_INTEGER:
-      // TODO(gitbuda): BigInt should be here but it's still experimental.
       return scope.Escape(
-          napi_value(Napi::Number::New(env, mg_value_integer(input_value))));
+          napi_value(Napi::BigInt::New(env, mg_value_integer(input_value))));
     case MG_VALUE_TYPE_FLOAT:
       return scope.Escape(
           napi_value(Napi::Number::New(env, mg_value_float(input_value))));
