@@ -23,7 +23,8 @@
     "install": "npx cmake-js compile",
     "lint": "npx eslint -c .eslintrc.js './{src,test,lib,example}/**/*.js'",
     "lint:fix": "npx eslint -c .eslintrc.js --fix './{src,test,lib,example}/**/*.js'",
-    "test": "npx jest"
+    "test": "npx jest",
+    "test:coverage": "npx jest --runInBand --logHeapUsage --collectCoverage"
   },
   "dependencies": {
     "bindings": "~1.2.1"
