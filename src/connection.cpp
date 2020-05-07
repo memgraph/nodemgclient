@@ -50,26 +50,124 @@ Connection::Connection(const Napi::CallbackInfo &info)
         .ThrowAsJavaScriptException();
     return;
   }
-  // TODO(gitbuda): Deal with all possible connection parameters.
+  const char *mg_host = NULL;
+  const char *mg_address = NULL;
+  int mg_port = -1;
+  const char *mg_username = NULL;
+  const char *mg_password = NULL;
+  const char *mg_client_name = NULL;
+  enum mg_sslmode mg_ssl_mode = MG_SSLMODE_REQUIRE;
+  const char *mg_ssl_cert = NULL;
+  const char *mg_ssl_key = NULL;
+  // TODO(gitbuda): Add trust callback.
+  // TODO(gitbuda): Write tests.
+
+  // Read and validate all user parameters.
   Napi::Object params = info[0].As<Napi::Object>();
+  // Dealing with string from napi is a bit tricky. std::string object has be
+  // created upfront in order to preserve the value long enough.
+  auto napi_host_value = params.Get("host");
+  auto napi_address_value = params.Get("address");
+  if ((napi_host_value.IsUndefined() && napi_address_value.IsUndefined()) ||
+      (!napi_host_value.IsUndefined() && !napi_address_value.IsUndefined())) {
+    Napi::Error::New(env, NODEMG_MSG_HOST_ADDR_MISSING)
+        .ThrowAsJavaScriptException();
+    return;
+  }
+  auto napi_host = napi_host_value.ToString().Utf8Value();
+  if (!napi_host_value.IsUndefined()) {
+    mg_host = napi_host.c_str();
+  }
+  auto napi_address = napi_address_value.ToString().Utf8Value();
+  if (!napi_address_value.IsUndefined()) {
+    mg_address = napi_address.c_str();
+  }
+  auto napi_port_value = params.Get("port");
+  if (!napi_port_value.IsUndefined()) {
+    mg_port = napi_port_value.ToNumber().Int32Value();
+  }
+  if (mg_port < 0 || mg_port > 65535) {
+    Napi::Error::New(env, NODEMG_MSG_PORT_OUT_OF_RANGE)
+        .ThrowAsJavaScriptException();
+    return;
+  }
+  auto napi_username_value = params.Get("username");
+  auto napi_username = napi_username_value.ToString().Utf8Value();
+  if (!napi_username_value.IsUndefined()) {
+    mg_username = napi_username.c_str();
+  }
+  auto napi_password_value = params.Get("password");
+  auto napi_password = napi_password_value.ToString().Utf8Value();
+  if (!napi_password_value.IsUndefined()) {
+    mg_password = napi_password.c_str();
+  }
+  auto napi_client_name_value = params.Get("client_name");
+  auto napi_client_name = napi_client_name_value.ToString().Utf8Value();
+  if (!napi_client_name_value.IsUndefined()) {
+    mg_client_name = napi_client_name.c_str();
+  }
+  auto napi_use_ssl_value = params.Get("use_ssl");
+  if (!napi_use_ssl_value.IsUndefined()) {
+    bool use_ssl = napi_use_ssl_value.ToBoolean();
+    std::cout << use_ssl << std::endl;
+    if (use_ssl) {
+      mg_ssl_mode = MG_SSLMODE_REQUIRE;
+    } else {
+      mg_ssl_mode = MG_SSLMODE_DISABLE;
+    }
+  }
+  auto napi_ssl_cert_value = params.Get("ssl_cert");
+  auto napi_ssl_cert = napi_ssl_cert_value.ToString().Utf8Value();
+  if (!napi_ssl_cert_value.IsUndefined()) {
+    mg_ssl_cert = napi_ssl_cert.c_str();
+  }
+  auto napi_ssl_key_value = params.Get("ssl_key");
+  auto napi_ssl_key = napi_ssl_key_value.ToString().Utf8Value();
+  if (!napi_ssl_key_value.IsUndefined()) {
+    mg_ssl_key = napi_ssl_key.c_str();
+  }
+
+  // Pass user parameters to the mgclient.
   mg_session_params *mg_params = mg_session_params_make();
-  if (!params) {
+  if (!mg_params) {
     Napi::Error::New(env, NODEMG_MSG_CONN_PARAMS_ALLOC_FAIL)
         .ThrowAsJavaScriptException();
     return;
   }
-  mg_session_params_set_host(mg_params,
-                             params.Get("host").ToString().Utf8Value().c_str());
-  mg_session_params_set_port(mg_params,
-                             params.Get("port").ToNumber().Uint32Value());
-  mg_session_params_set_sslmode(mg_params, MG_SSLMODE_REQUIRE);
+  if (mg_host) {
+    mg_session_params_set_host(mg_params, mg_host);
+  }
+  mg_session_params_set_port(mg_params, static_cast<uint16_t>(mg_port));
+  if (mg_address) {
+    mg_session_params_set_address(mg_params, mg_address);
+  }
+  if (mg_username) {
+    mg_session_params_set_username(mg_params, mg_username);
+  }
+  if (mg_password) {
+    mg_session_params_set_password(mg_params, mg_password);
+  }
+  if (mg_client_name) {
+    mg_session_params_set_client_name(mg_params, mg_client_name);
+  }
+  mg_session_params_set_sslmode(mg_params, mg_ssl_mode);
+  if (mg_ssl_cert) {
+    mg_session_params_set_sslcert(mg_params, mg_ssl_cert);
+  }
+  if (mg_ssl_key) {
+    mg_session_params_set_sslkey(mg_params, mg_ssl_key);
+  }
+
+  // Try to connect to the server.
   int mg_status = mg_connect(mg_params, &session_);
   mg_session_params_destroy(mg_params);
   if (mg_status < 0) {
-    Napi::TypeError::New(env, NODEMG_MSG_CONN_FAIL)
-        .ThrowAsJavaScriptException();
+    std::string connect_error(NODEMG_MSG_CONN_FAIL);
+    connect_error.append(" ");
+    connect_error.append(mg_session_error(session_));
     mg_session_destroy(session_);
     session_ = nullptr;
+    Napi::TypeError::New(env, connect_error).ThrowAsJavaScriptException();
     return;
   }
 }

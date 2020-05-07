@@ -21,3 +21,6 @@ constexpr char NODEMG_MSG_CONN_FAIL[] = "Connection failed.";
 constexpr char NODEMG_MSG_TYPE_ERROR[] = "A value of unknown type encountered.";
 constexpr char NODEMG_MSG_WRONG_EXECUTE_ARG[] = "Wrong execute arguments.";
 constexpr char NODEMG_MSG_RUN_FAIL[] = "Fail to execute query (run command).";
+constexpr char NODEMG_MSG_HOST_ADDR_MISSING[] =
+    "Exactly one of host and address parameters must be specified.";
+constexpr char NODEMG_MSG_PORT_OUT_OF_RANGE[] = "Port out of range.";
