@@ -20,6 +20,7 @@ const connection = memgraph.connect({
   port: 7687,
   username: 'admin',
   password: 'admin',
+  // eslint-disable-next-line camelcase
   trust_callback: (hostname, ip_address, key_type, fingerprint) => {
     console.log(hostname);
     console.log(ip_address);
