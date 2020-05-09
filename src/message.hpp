@@ -24,3 +24,5 @@ constexpr char NODEMG_MSG_RUN_FAIL[] = "Fail to execute query (run command).";
 constexpr char NODEMG_MSG_HOST_ADDR_MISSING[] =
     "Exactly one of host and address parameters must be specified.";
 constexpr char NODEMG_MSG_PORT_OUT_OF_RANGE[] = "Port out of range.";
+constexpr char NODEMG_MSG_TRUST_CALLBACK_IS_NOT_FUNCTION[] =
+    "Trust callback isn't callable.";

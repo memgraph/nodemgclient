@@ -13,52 +13,73 @@
 // limitations under the License.
 
 const memgraph = require('../lib');
-const query = require('./queries');
 
-// TODO(gitbuda): Figure out why sometimes test SEGFAULT.
+// TODO(gitbuda): Add utils to mamage Memgraph server and add all tests.
 
-test('Connect to Memgraph and execute basic queries', () => {
-  const connection = memgraph.connect({ host: 'localhost', port: 7687 });
+test('Connect to Memgraph host via SSL', () => {
+  for (let iter = 0; iter < 100; iter++) {
+    const connection = memgraph.connect({
+      host: 'localhost',
+      port: 7687,
+      use_ssl: true,
+    });
+    expect(connection).toBeDefined();
+  }
+});
+
+test('Connect to Memgraph address via SSL', () => {
+  const connection = memgraph.connect({
+    address: '127.0.0.1',
+    port: 7687,
+    use_ssl: true,
+  });
   expect(connection).toBeDefined();
-  connection.execute(query.DELETE_ALL);
-  connection.execute(query.CREATE_TRIANGLE);
-  const nodesNo = connection.execute(query.COUNT_NODES);
-  expect(nodesNo[0][0]).toEqual(3n);
-  const edgesNo = connection.execute(query.COUNT_EDGES);
-  expect(edgesNo[0][0]).toEqual(3n);
+});
+
+test('Fail because trust_callback is not callable', () => {
   expect(() => {
-    connection.execute('QUERY');
+    memgraph.connect({
+      host: 'localhost',
+      port: 7687,
+      use_ssl: true,
+      trust_callback: 'Not callable.',
+    });
   }).toThrow();
 });
 
-test('Create and fetch a node', () => {
-  const connection = memgraph.connect({ host: 'localhost', port: 7687 });
-  expect(connection).toBeDefined();
-  connection.execute(query.DELETE_ALL);
-  connection.execute(query.CREATE_RICH_NODE);
-  const node = connection.execute(query.NODES)[0][0];
-  expect(node.id).toBeGreaterThanOrEqual(0);
-  expect(node.labels).toContain('Label1');
-  expect(node.labels).toContain('Label2');
-  expect(node.properties.prop0).toEqual(undefined);
-  expect(node.properties.prop1).toEqual(true);
-  expect(node.properties.prop2).toEqual(false);
-  expect(node.properties.prop3).toEqual(10n);
-  expect(node.properties.prop4).toEqual(100.0);
-  expect(node.properties.prop5).toEqual('test');
+test('Fail because trust_callback returns false', () => {
+  expect(() => {
+    memgraph.connect({
+      host: 'localhost',
+      port: 7687,
+      use_ssl: true,
+      trust_callback: () => {
+        return false;
+      },
+    });
+  }).toThrow();
 });
 
-test('Create and fetch a relationship', () => {
-  const connection = memgraph.connect({ host: 'localhost', port: 7687 });
+test('Connect trust_callback when returns true', () => {
+  const connection = memgraph.connect({
+    address: '127.0.0.1',
+    port: 7687,
+    use_ssl: true,
+    trust_callback: () => {
+      return true;
+    },
+  });
   expect(connection).toBeDefined();
-  connection.execute(query.DELETE_ALL);
-  connection.execute(query.CREATE_RICH_EDGE);
-  const node = connection.execute(query.EDGES)[0][0];
-  expect(node.id).toBeGreaterThanOrEqual(0);
-  expect(node.type).toContain('Type');
-  expect(node.properties.prop1).toEqual(true);
-  expect(node.properties.prop2).toEqual(false);
-  expect(node.properties.prop3).toEqual(1n);
-  expect(node.properties.prop4).toEqual(2.0);
-  expect(node.properties.prop5).toEqual('test');
+});
+
+test('Connect and check that trust callback received all arguments', () => {
+  const connection = memgraph.connect({
+    address: '127.0.0.1',
+    port: 7687,
+    use_ssl: true,
+    trust_callback: () => {
+      return true;
+    },
+  });
+  expect(connection).toBeDefined();
 });

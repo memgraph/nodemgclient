@@ -15,7 +15,23 @@
 const memgraph = require('../lib');
 const query = require('../test/queries');
 
-const connection = memgraph.connect({ host: 'localhost', port: 7687 });
+const connection = memgraph.connect({
+  host: 'localhost',
+  port: 7687,
+  username: 'admin',
+  password: 'admin',
+  trust_callback: (hostname, ip_address, key_type, fingerprint) => {
+    console.log(hostname);
+    console.log(ip_address);
+    console.log(key_type);
+    console.log(fingerprint);
+    // TODO(gitbuda): Move this part to the documentation.
+    // console.log(xyz); -> Works fine.
+    // throw Error("error"); -> Works fine.
+    // throw 10 -> FATAL ERROR; NOTE: Napi can't handle everything.
+    return true;
+  },
+});
 
 const nodesNo = connection.execute(query.COUNT_NODES);
 const edgesNo = connection.execute(query.COUNT_EDGES);
