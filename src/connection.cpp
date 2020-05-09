@@ -12,11 +12,56 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <iostream>
-
 #include "connection.hpp"
 #include "glue.hpp"
 #include "message.hpp"
+
+struct TrustData {
+  TrustData(Napi::Env e, Napi::Function callback)
+      : env(e), trust_callback(callback) {}
+  Napi::Env env;
+  Napi::Function trust_callback;
+};
+
+static int execute_trust_callback(const char *hostname, const char *ip_address,
+                                  const char *key_type, const char *fingerprint,
+                                  TrustData *trust_data) {
+  auto env = trust_data->env;
+  auto napi_hostname = Napi::String::New(env, hostname);
+  if (env.IsExceptionPending()) {
+    env.GetAndClearPendingException();
+    return -1;
+  }
+  auto napi_ip_address = Napi::String::New(env, ip_address);
+  if (env.IsExceptionPending()) {
+    env.GetAndClearPendingException();
+    return -1;
+  }
+  auto napi_key_type = Napi::String::New(env, key_type);
+  if (env.IsExceptionPending()) {
+    env.GetAndClearPendingException();
+    return -1;
+  }
+  auto napi_fingerprint = Napi::String::New(env, fingerprint);
+  if (env.IsExceptionPending()) {
+    env.GetAndClearPendingException();
+    return -1;
+  }
+  auto result = trust_data->trust_callback(
+      {napi_hostname, napi_ip_address, napi_key_type, napi_fingerprint});
+  if (env.IsExceptionPending()) {
+    env.GetAndClearPendingException();
+    return -1;
+  }
+  if (!result.IsBoolean()) {
+    return -1;
+  }
+  if (result.ToBoolean().Value()) {
+    return 0;
+  } else {
+    return -1;
+  }
+}
 
 Napi::FunctionReference Connection::constructor;
 
@@ -50,19 +95,20 @@ Connection::Connection(const Napi::CallbackInfo &info)
         .ThrowAsJavaScriptException();
     return;
   }
+
+  // Declare all Memgraph connection parameters.
   const char *mg_host = NULL;
   const char *mg_address = NULL;
-  int mg_port = -1;
+  int mg_port = -1; // TODO(gitbuda): Define 7687 as a default port.
   const char *mg_username = NULL;
   const char *mg_password = NULL;
   const char *mg_client_name = NULL;
   enum mg_sslmode mg_ssl_mode = MG_SSLMODE_REQUIRE;
   const char *mg_ssl_cert = NULL;
   const char *mg_ssl_key = NULL;
-  // TODO(gitbuda): Add trust callback.
-  // TODO(gitbuda): Write tests.
+  std::unique_ptr<TrustData> mg_trust_data;
 
-  // Read and validate all user parameters.
+  // Read and validate all Memgraph connection parameters defined by user.
   Napi::Object params = info[0].As<Napi::Object>();
   // Dealing with string from napi is a bit tricky. std::string object has be
   // created upfront in order to preserve the value long enough.
@@ -108,9 +154,7 @@ Connection::Connection(const Napi::CallbackInfo &info)
   }
   auto napi_use_ssl_value = params.Get("use_ssl");
   if (!napi_use_ssl_value.IsUndefined()) {
-    bool use_ssl = napi_use_ssl_value.ToBoolean();
-    std::cout << use_ssl << std::endl;
-    if (use_ssl) {
+    if (napi_use_ssl_value.ToBoolean()) {
       mg_ssl_mode = MG_SSLMODE_REQUIRE;
     } else {
       mg_ssl_mode = MG_SSLMODE_DISABLE;
@@ -125,6 +169,18 @@ Connection::Connection(const Napi::CallbackInfo &info)
   auto napi_ssl_key = napi_ssl_key_value.ToString().Utf8Value();
   if (!napi_ssl_key_value.IsUndefined()) {
     mg_ssl_key = napi_ssl_key.c_str();
+  }
+  auto napi_trust_callback_value = params.Get("trust_callback");
+  if (!napi_trust_callback_value.IsUndefined()) {
+    if (!napi_trust_callback_value.IsFunction()) {
+      Napi::Error::New(env, NODEMG_MSG_TRUST_CALLBACK_IS_NOT_FUNCTION)
+          .ThrowAsJavaScriptException();
+      return;
+    }
+    auto napi_trust_callback = napi_trust_callback_value.As<Napi::Function>();
+    if (!napi_trust_callback_value.IsUndefined()) {
+      mg_trust_data = std::make_unique<TrustData>(env, napi_trust_callback);
+    }
   }
 
   // Pass user parameters to the mgclient.
@@ -156,6 +212,13 @@ Connection::Connection(const Napi::CallbackInfo &info)
   }
   if (mg_ssl_key) {
     mg_session_params_set_sslkey(mg_params, mg_ssl_key);
+  }
+  if (mg_trust_data) {
+    mg_session_params_set_trust_callback(
+        mg_params,
+        reinterpret_cast<mg_trust_callback_type>(execute_trust_callback));
+    mg_session_params_set_trust_data(
+        mg_params, reinterpret_cast<void *>(mg_trust_data.get()));
   }
 
   // Try to connect to the server.
