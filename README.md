@@ -20,7 +20,7 @@ sources you will need:
 * Node.js >= 10.4.
 * [mgclient](https://github.com/memgraph/mgclient) (headers and the lib).
 
-Once prerequisites are met, you can install `nodemgclient` by running:
+Once build prerequisites are met, you can install `nodemgclient` by running:
 
 ```bash
 npm install
