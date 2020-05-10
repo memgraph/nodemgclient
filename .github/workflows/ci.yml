@@ -26,6 +26,7 @@ jobs:
     - name: Install and build addon
       run: |
         npm install
+        npm run build:release
     - name: Lint JS code
       run: |
         npm run lint
@@ -48,4 +49,4 @@ jobs:
         docker run -d -p 7687:7687 memgraph
     - name: Run JS tests
       run: |
-        npm run test:coverage
+        npm run test
