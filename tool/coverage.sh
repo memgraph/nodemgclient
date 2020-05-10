@@ -4,14 +4,13 @@ set -Eeuo pipefail
 
 script_dir="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd)"
 project_dir="${script_dir}/.."
-output_dir="${project_dir}/coverage"
-cpp_cov_output_dir="${output_dir}/cpp-coverage"
-cpp_cov_target_file="${project_dir}/build/Debug/nodemgclient.node"
 
 # Cleanup all existing build files.
 rm -rf "${project_dir}/build" "${project_dir}/coverage" "${project_dir}/node_modules"
 
-# Generage CPP coverage report based on debug build.
+# Generage CPP coverage report based on DEBUG build.
+cpp_cov_output_dir="${project_dir}/coverage/cpp-coverage"
+cpp_cov_target_file="${project_dir}/build/Debug/nodemgclient.node"
 mkdir -p "${cpp_cov_output_dir}"
 npm install --prefix "${project_dir}"
 npm run build:debug --prefix "${project_dir}"
@@ -25,7 +24,7 @@ llvm-cov show "${cpp_cov_target_file}" \
     -o "${cpp_cov_output_dir}" \
     -show-line-counts-or-regions -Xdemangler c++filt -Xdemangler -n
 
-# Generate JS coverage report based on release build.
+# Generate JS coverage report based on RELEASE build.
 rm -rf "${project_dir}/build" "${project_dir}/node_modules"
 npm install --prefix "${project_dir}"
 npm run build:release --prefix "${project_dir}"
