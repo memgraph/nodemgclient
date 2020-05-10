@@ -4,7 +4,7 @@
 
 `nodemgclient` a Node.js binding for
 [mgclient](https://github.com/memgraph/mgclient) used to interact with
-Memgraph.
+[Memgraph](https://memgraph.com).
 
 ## Prerequisites
 
