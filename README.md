@@ -13,6 +13,7 @@ Memgraph DBMS.
 `nodemgclient` is a wrapper around the
 [mgclient](https://github.com/memgraph/mgclient) library. To install it from
 sources you will need:
+
     * A Cmake >= 3.10.
     * A C compiler supporting C11 standard.
     * A C++ compiler supporting C++17 standard.
