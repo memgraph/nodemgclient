@@ -4,7 +4,7 @@
 
 `nodemgclient` a Node.js binding for
 [mgclient](https://github.com/memgraph/mgclient) used to interact with
-Memgraph DBMS.
+Memgraph.
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@ Memgraph DBMS.
 [mgclient](https://github.com/memgraph/mgclient) library. To install it from
 sources you will need:
 
-* A Cmake >= 3.10.
+* A CMake >= 3.10.
 * A C compiler supporting C11 standard.
 * A C++ compiler supporting C++17 standard.
 * Node.js >= 10.4.
