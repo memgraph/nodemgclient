@@ -26,6 +26,7 @@ jobs:
     - name: Install and build addon
       run: |
         npm install
+        npm build:release
     - name: Lint JS code
       run: |
         npm run lint
