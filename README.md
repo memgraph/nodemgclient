@@ -1,6 +1,6 @@
 [![Actions Status](https://github.com/memgraph/nodemgclient/workflows/CI/badge.svg)](https://github.com/memgraph/nodemgclient/actions)
 
-# nodemgclien - Memgraph client for Node.js
+# nodemgclien - Node.js Memgraph Client
 
 `nodemgclient` a Node.js binding for
 [mgclient](https://github.com/memgraph/mgclient) used to interact with
@@ -8,10 +8,10 @@ Memgraph.
 
 ## Prerequisites
 
-### Build prerequisites
+### Build
 
 `nodemgclient` is a wrapper around the
-[mgclient](https://github.com/memgraph/mgclient) library. To install it from
+[mgclient](https://github.com/memgraph/mgclient). To install it from
 sources you will need:
 
 * A CMake >= 3.10.
