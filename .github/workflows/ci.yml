@@ -49,4 +49,4 @@ jobs:
         docker run -d -p 7687:7687 memgraph
     - name: Run JS tests
       run: |
-        npm run test:coverage
+        npm run test
