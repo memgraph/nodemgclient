@@ -13,8 +13,50 @@
 // limitations under the License.
 
 const memgraph = require('../lib');
+const Docker = require('dockerode');
+const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
-// TODO(gitbuda): Add utils to mamage Memgraph server and add all tests.
+// TODO(gitbuda): Add all connection tests.
+
+async function checkAgainstMemgraph(check, port) {
+  const container = await docker.createContainer({
+    Image: 'memgraph:latest',
+    Tty: false,
+    AttachStdin: false,
+    AttachStdout: false,
+    AttachStderr: false,
+    OpenStdin: false,
+    StdinOnce: false,
+    HostConfig: {
+      AutoRemove: true,
+      PortBindings: {
+        '7687/tcp': [{ HostPort: port.toString() }],
+      },
+    },
+  });
+  await container.start();
+  // Waiting is not completly trivial because TCP connections is live while
+  // Memgraph is still not up and running.
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  try {
+    await check();
+  } catch (err) {
+    throw err;
+  } finally {
+    await container.remove({ force: true });
+  }
+}
+
+test('Run Memgraph with SSL on non-standard port', async () => {
+  await checkAgainstMemgraph(async () => {
+    const connection = memgraph.connect({
+      host: 'localhost',
+      port: 7688,
+      use_ssl: true,
+    });
+    expect(connection).toBeDefined();
+  }, 7688);
+});
 
 test('Connect to Memgraph host via SSL', () => {
   for (let iter = 0; iter < 100; iter++) {
