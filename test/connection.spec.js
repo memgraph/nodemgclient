@@ -40,6 +40,7 @@ async function checkAgainstMemgraph(check, port) {
   await new Promise((resolve) => setTimeout(resolve, 500));
   try {
     await check();
+    // eslint-disable-next-line no-useless-catch
   } catch (err) {
     throw err;
   } finally {
