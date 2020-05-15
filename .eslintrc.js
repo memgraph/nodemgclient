@@ -36,7 +36,7 @@ module.exports = {
     'valid-jsdoc': 'off',
   },
   "overrides": [{
-    "files": "**/*.spec.js",
+    "files": "test/*.js",
     "rules": {
       "node/no-unpublished-require": 0,
     },
