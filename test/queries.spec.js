@@ -35,7 +35,7 @@ test('Connect to Memgraph and execute basic queries', async () => {
       connection.execute('QUERY');
     }).toThrow();
   }, port);
-});
+}, 10000);
 
 test('Create and fetch a node', async () => {
   const port = await getPort();
@@ -55,7 +55,7 @@ test('Create and fetch a node', async () => {
     expect(node.properties.prop4).toEqual(100.0);
     expect(node.properties.prop5).toEqual('test');
   }, port);
-});
+}, 10000);
 
 test('Create and fetch a relationship', async () => {
   const port = await getPort();
@@ -73,4 +73,4 @@ test('Create and fetch a relationship', async () => {
     expect(node.properties.prop4).toEqual(2.0);
     expect(node.properties.prop5).toEqual('test');
   }, port);
-});
+}, 10000);
