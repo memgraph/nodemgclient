@@ -20,6 +20,20 @@ const util = require('./util');
 
 // TODO(gitbuda): Figure out why sometimes test SEGFAULT.
 
+test('Connect to Memgraph and test basic data types', async () => {
+  const port = await getPort();
+  await util.checkAgainstMemgraph(() => {
+    const connection = memgraph.connect({ host: 'localhost', port: port });
+    expect(connection).toBeDefined();
+    const nullValue = connection.execute('RETURN Null;')[0][0];
+    expect(nullValue).toEqual(null);
+    const listValue = connection.execute('RETURN [1, 2];')[0][0];
+    expect(listValue).toEqual([1n, 2n]);
+    const mapValue = connection.execute('RETURN {k1: 1, k2: "v"} as d;')[0][0];
+    expect(mapValue).toEqual({ k1: 1n, k2: 'v' });
+  }, port);
+}, 10000);
+
 test('Connect to Memgraph and execute basic queries', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(() => {

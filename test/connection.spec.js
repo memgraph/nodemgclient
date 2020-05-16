@@ -17,7 +17,28 @@ const getPort = require('get-port');
 const memgraph = require('../lib');
 const util = require('./util');
 
-// TODO(gitbuda): Add all connection tests.
+// TODO(gitbuda): Add all connection params test.
+
+test('Fail because connection params are not there', () => {
+  expect(() => {
+    memgraph.connect();
+  }).toThrow();
+});
+
+test('Fail because both host and address are missing', () => {
+  expect(() => {
+    memgraph.connect({ port: 7687, use_ssl: true });
+  }).toThrow();
+});
+
+test('Fail because port number is out of range', () => {
+  expect(() => {
+    memgraph.connect({ host: 'localhost', port: -100, use_ssl: true });
+  }).toThrow();
+  expect(() => {
+    memgraph.connect({ host: 'localhost', port: 10000, use_ssl: true });
+  }).toThrow();
+});
 
 test('Connect to Memgraph host via SSL multiple times', async () => {
   const port = await getPort();
