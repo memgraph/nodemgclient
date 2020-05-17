@@ -39,4 +39,17 @@ module.exports = Object.freeze({
 					   prop3: 1,
 					   prop4: 2.0,
 					   prop5: "test"}]->();`,
+  CREATE_PATH: `
+    CREATE
+      (:Label {id:1})
+      -[:Type {id: 1}]->
+      (:Label {id:2})
+      -[:Type {id: 2}]->
+      (:Label {id:3})
+      -[:Type {id: 3}]->
+      (:Label {id:4});`,
+  MATCH_PATHS: `MATCH path=(startNode {id: 1})-[*]->(endNode) RETURN path;`,
+  MATCH_RELATIONSHIPS: `
+    MATCH path=(endNode {id: 2})<-[]-(startNode {id: 1})
+    RETURN relationships(path);`,
 });

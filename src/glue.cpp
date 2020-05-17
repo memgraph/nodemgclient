@@ -110,6 +110,75 @@ std::optional<Napi::Value> MgRelationshipToNapiRelationship(
   return scope.Escape(napi_value(output_relationship));
 }
 
+std::optional<Napi::Value> MgUnboundRelationshipToNapiRelationship(
+    Napi::Env env, const mg_unbound_relationship *input_unbound_relationship) {
+  Napi::EscapableHandleScope scope(env);
+
+  auto relationship_id = Napi::BigInt::New(
+      env, mg_unbound_relationship_id(input_unbound_relationship));
+  int64_t relationship_start_node_id = -1;
+  int64_t relationship_end_node_id = -1;
+
+  auto relationship_type = MgStringToNapiString(
+      env, mg_unbound_relationship_type(input_unbound_relationship));
+
+  auto relationship_properties = MgMapToNapiObject(
+      env, mg_unbound_relationship_properties(input_unbound_relationship));
+  if (!relationship_properties) {
+    return std::nullopt;
+  }
+
+  Napi::Object output_relationship = Napi::Object::New(env);
+  output_relationship.Set("id", relationship_id);
+  output_relationship.Set("startNodeId", relationship_start_node_id);
+  output_relationship.Set("endNodeId", relationship_end_node_id);
+  output_relationship.Set("type", relationship_type);
+  output_relationship.Set("properties", *relationship_properties);
+  return scope.Escape(napi_value(output_relationship));
+}
+
+std::optional<Napi::Value> MgPathToNapiPath(Napi::Env env,
+                                            const mg_path *input_path) {
+  Napi::EscapableHandleScope scope(env);
+
+  auto nodes = Napi::Array::New(env);
+  auto relationships = Napi::Array::New(env);
+  int64_t prev_node_id = -1;
+  for (uint32_t index = 0; index <= mg_path_length(input_path); ++index) {
+    int64_t curr_node_id = mg_node_id(mg_path_node_at(input_path, index));
+    auto node = MgNodeToNapiNode(env, mg_path_node_at(input_path, index));
+    if (!node) {
+      return std::nullopt;
+    }
+    nodes[index] = *node;
+    if (index > 0) {
+      auto relationship = MgUnboundRelationshipToNapiRelationship(
+          env, mg_path_relationship_at(input_path, index - 1));
+      if (!relationship) {
+        return std::nullopt;
+      }
+      if (mg_path_relationship_reversed_at(input_path, index - 1)) {
+        relationship->As<Napi::Object>().Set(
+            "startNodeId", Napi::BigInt::New(env, curr_node_id));
+        relationship->As<Napi::Object>().Set(
+            "endNodeId", Napi::BigInt::New(env, prev_node_id));
+      } else {
+        relationship->As<Napi::Object>().Set(
+            "startNodeId", Napi::BigInt::New(env, prev_node_id));
+        relationship->As<Napi::Object>().Set(
+            "endNodeId", Napi::BigInt::New(env, curr_node_id));
+      }
+      relationships[index - 1] = *relationship;
+    }
+    prev_node_id = curr_node_id;
+  }
+
+  Napi::Object output_path = Napi::Object::New(env);
+  output_path.Set("nodes", nodes);
+  output_path.Set("relationships", relationships);
+  return scope.Escape(napi_value(output_path));
+}
+
 std::optional<Napi::Value> MgValueToNapiValue(Napi::Env env,
                                               const mg_value *input_value) {
   Napi::EscapableHandleScope scope(env);
@@ -157,20 +226,27 @@ std::optional<Napi::Value> MgValueToNapiValue(Napi::Env env,
       }
       return scope.Escape(napi_value(*relationship_value));
     }
-    case MG_VALUE_TYPE_PATH:
-      Napi::Error::New(env, "Fetching of paths not yet implemented.")
-          .ThrowAsJavaScriptException();
-      return std::nullopt;
+    case MG_VALUE_TYPE_UNBOUND_RELATIONSHIP: {
+      auto unbound_relationship_value = MgUnboundRelationshipToNapiRelationship(
+          env, mg_value_unbound_relationship(input_value));
+      if (!unbound_relationship_value) {
+        return std::nullopt;
+      }
+      return scope.Escape(napi_value(*unbound_relationship_value));
+    }
+    case MG_VALUE_TYPE_PATH: {
+      auto path_value = MgPathToNapiPath(env, mg_value_path(input_value));
+      if (!path_value) {
+        return std::nullopt;
+      }
+      return scope.Escape(napi_value(*path_value));
+    }
     case MG_VALUE_TYPE_UNKNOWN:
-      Napi::Error::New(env, "Fetching of unknowns not yet implemented.")
-          .ThrowAsJavaScriptException();
-      return std::nullopt;
-    case MG_VALUE_TYPE_UNBOUND_RELATIONSHIP:
-      Napi::Error::New(env, "Fetching of unbound edges not yet implemented.")
+      Napi::Error::New(env, NODEMG_MSG_UNKNOWN_TYPE_ERROR)
           .ThrowAsJavaScriptException();
       return std::nullopt;
     default:
-      Napi::TypeError::New(env, NODEMG_MSG_TYPE_ERROR)
+      Napi::TypeError::New(env, NODEMG_MSG_UNRECOGNIZED_TYPE_ERROR)
           .ThrowAsJavaScriptException();
       return std::nullopt;
   }
