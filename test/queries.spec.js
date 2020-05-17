@@ -20,7 +20,7 @@ const util = require('./util');
 
 // TODO(gitbuda): Figure out why sometimes test SEGFAULT.
 
-test('Connect to Memgraph and test basic data types', async () => {
+test('Basic data types', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(() => {
     const connection = memgraph.connect({ host: 'localhost', port: port });
@@ -34,7 +34,7 @@ test('Connect to Memgraph and test basic data types', async () => {
   }, port);
 }, 10000);
 
-test('Connect to Memgraph and execute basic queries', async () => {
+test('Basic queries', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(() => {
     const connection = memgraph.connect({ host: 'localhost', port: port });
@@ -86,5 +86,97 @@ test('Create and fetch a relationship', async () => {
     expect(node.properties.prop3).toEqual(1n);
     expect(node.properties.prop4).toEqual(2.0);
     expect(node.properties.prop5).toEqual('test');
+  }, port);
+}, 10000);
+
+test('Create and fetch a path', async () => {
+  const port = await getPort();
+  await util.checkAgainstMemgraph(() => {
+    const connection = memgraph.connect({ host: 'localhost', port: port });
+    expect(connection).toBeDefined();
+    connection.execute(query.DELETE_ALL);
+    connection.execute(query.CREATE_PATH);
+    const nodesNo = connection.execute(query.COUNT_NODES);
+    expect(nodesNo[0][0]).toEqual(4n);
+    const edgesNo = connection.execute(query.COUNT_EDGES);
+    expect(edgesNo[0][0]).toEqual(3n);
+    const data = connection.execute(query.MATCH_PATHS);
+    expect(data.length).toEqual(3);
+    const longestPath = data[2][0];
+    expect(longestPath.nodes.length).toEqual(4);
+    expect(longestPath.nodes[0]).toEqual(
+      expect.objectContaining({
+        labels: ['Label'],
+        properties: { id: 1n },
+      }),
+    );
+    expect(longestPath.nodes[1]).toEqual(
+      expect.objectContaining({
+        labels: ['Label'],
+        properties: { id: 2n },
+      }),
+    );
+    expect(longestPath.nodes[2]).toEqual(
+      expect.objectContaining({
+        labels: ['Label'],
+        properties: { id: 3n },
+      }),
+    );
+    expect(longestPath.nodes[3]).toEqual(
+      expect.objectContaining({
+        labels: ['Label'],
+        properties: { id: 4n },
+      }),
+    );
+    expect(longestPath.relationships.length).toEqual(3);
+    expect(longestPath.relationships[0]).toEqual(
+      expect.objectContaining({
+        startNodeId: 0n,
+        endNodeId: 1n,
+        type: 'Type',
+        properties: { id: 1n },
+      }),
+    );
+    expect(longestPath.relationships[1]).toEqual(
+      expect.objectContaining({
+        startNodeId: 1n,
+        endNodeId: 2n,
+        type: 'Type',
+        properties: { id: 2n },
+      }),
+    );
+    expect(longestPath.relationships[2]).toEqual(
+      expect.objectContaining({
+        startNodeId: 2n,
+        endNodeId: 3n,
+        type: 'Type',
+        properties: { id: 3n },
+      }),
+    );
+  }, port);
+}, 10000);
+
+test('Create path and fetch unbound relationship', async () => {
+  const port = await getPort();
+  await util.checkAgainstMemgraph(() => {
+    const connection = memgraph.connect({ host: 'localhost', port: port });
+    expect(connection).toBeDefined();
+    connection.execute(query.DELETE_ALL);
+    connection.execute(query.CREATE_PATH);
+    const nodesNo = connection.execute(query.COUNT_NODES);
+    expect(nodesNo[0][0]).toEqual(4n);
+    const edgesNo = connection.execute(query.COUNT_EDGES);
+    expect(edgesNo[0][0]).toEqual(3n);
+    const data = connection.execute(query.MATCH_RELATIONSHIPS)[0][0];
+    expect(data.length).toEqual(1);
+    const relationship = data[0];
+    expect(relationship).toEqual(
+      expect.objectContaining({
+        startNodeId: 0n,
+        endNodeId: 1n,
+        type: 'Type',
+        properties: { id: 1n },
+      }),
+    );
   }, port);
 }, 10000);

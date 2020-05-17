@@ -18,7 +18,10 @@ constexpr char NODEMG_MSG_WRONG_CONN_ARG[] =
 constexpr char NODEMG_MSG_CONN_PARAMS_ALLOC_FAIL[] =
     "Failed to allocate connection parameters.";
 constexpr char NODEMG_MSG_CONN_FAIL[] = "Connection failed.";
-constexpr char NODEMG_MSG_TYPE_ERROR[] = "A value of unknown type encountered.";
+constexpr char NODEMG_MSG_UNKNOWN_TYPE_ERROR[] =
+    "A value of unknown type encountered.";
+constexpr char NODEMG_MSG_UNRECOGNIZED_TYPE_ERROR[] =
+    "Unrecognized type encountered.";
 constexpr char NODEMG_MSG_WRONG_EXECUTE_ARG[] = "Wrong execute arguments.";
 constexpr char NODEMG_MSG_RUN_FAIL[] = "Fail to execute query (run command).";
 constexpr char NODEMG_MSG_HOST_ADDR_MISSING[] =
