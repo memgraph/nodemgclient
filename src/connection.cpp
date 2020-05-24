@@ -91,7 +91,7 @@ Connection::Connection(const Napi::CallbackInfo &info)
   Napi::Env env = info.Env();
   Napi::HandleScope scope(env);
   if (info.Length() < 1 || !info[0].IsObject()) {
-    Napi::TypeError::New(env, NODEMG_MSG_WRONG_CONN_ARG)
+    Napi::TypeError::New(env, NODEMG_MSG_CONN_WRONG_ARG)
         .ThrowAsJavaScriptException();
     return;
   }
@@ -99,7 +99,7 @@ Connection::Connection(const Napi::CallbackInfo &info)
   // Declare all Memgraph connection parameters.
   const char *mg_host = NULL;
   const char *mg_address = NULL;
-  int mg_port = -1; // TODO(gitbuda): Define 7687 as a default port.
+  int mg_port = -1;  // TODO(gitbuda): Define 7687 as a default port.
   const char *mg_username = NULL;
   const char *mg_password = NULL;
   const char *mg_client_name = NULL;
@@ -116,7 +116,7 @@ Connection::Connection(const Napi::CallbackInfo &info)
   auto napi_address_value = params.Get("address");
   if ((napi_host_value.IsUndefined() && napi_address_value.IsUndefined()) ||
       (!napi_host_value.IsUndefined() && !napi_address_value.IsUndefined())) {
-    Napi::Error::New(env, NODEMG_MSG_HOST_ADDR_MISSING)
+    Napi::Error::New(env, NODEMG_MSG_CONN_HOST_ADDR_MISSING)
         .ThrowAsJavaScriptException();
     return;
   }
@@ -133,7 +133,7 @@ Connection::Connection(const Napi::CallbackInfo &info)
     mg_port = napi_port_value.ToNumber().Int32Value();
   }
   if (mg_port < 0 || mg_port > 65535) {
-    Napi::Error::New(env, NODEMG_MSG_PORT_OUT_OF_RANGE)
+    Napi::Error::New(env, NODEMG_MSG_CONN_PORT_OUT_OF_RANGE)
         .ThrowAsJavaScriptException();
     return;
   }
@@ -173,7 +173,7 @@ Connection::Connection(const Napi::CallbackInfo &info)
   auto napi_trust_callback_value = params.Get("trust_callback");
   if (!napi_trust_callback_value.IsUndefined()) {
     if (!napi_trust_callback_value.IsFunction()) {
-      Napi::Error::New(env, NODEMG_MSG_TRUST_CALLBACK_IS_NOT_FUNCTION)
+      Napi::Error::New(env, NODEMG_MSG_CONN_TRUST_CALLBACK_IS_NOT_FUNCTION)
           .ThrowAsJavaScriptException();
       return;
     }
@@ -246,7 +246,7 @@ Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
   Napi::EscapableHandleScope scope(env);
 
   if (info.Length() < 1 || info.Length() > 2) {
-    Napi::Error::New(env, NODEMG_MSG_WRONG_EXECUTE_ARGS)
+    Napi::Error::New(env, NODEMG_MSG_EXEC_WRONG_ARGS)
         .ThrowAsJavaScriptException();
     return env.Null();
   }
@@ -255,7 +255,7 @@ Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
   if (info.Length() == 1 || info.Length() == 2) {
     auto maybe_query = info[0];
     if (!maybe_query.IsString()) {
-      Napi::Error::New(env, NODEMG_MSG_QUERY_STRING_ERROR)
+      Napi::Error::New(env, NODEMG_MSG_EXEC_QUERY_STRING_ERROR)
           .ThrowAsJavaScriptException();
       return env.Null();
     }
@@ -264,14 +264,14 @@ Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
   if (info.Length() == 2) {
     auto maybe_params = info[1];
     if (!maybe_params.IsObject()) {
-      Napi::Error::New(env, NODEMG_MSG_QUERY_PARAMS_ERROR)
+      Napi::Error::New(env, NODEMG_MSG_EXEC_QUERY_PARAMS_ERROR)
           .ThrowAsJavaScriptException();
       return env.Null();
     }
     auto params = maybe_params.As<Napi::Object>();
     auto maybe_mg_params = NapiObjectToMgMap(env, params);
     if (!maybe_mg_params) {
-      Napi::Error::New(env, NODEMG_MSG_QUERY_PARAMS_ALLOC_FAIL)
+      Napi::Error::New(env, NODEMG_MSG_EXEC_CONSTRUCT_QUERY_PARAMS_FAIL)
           .ThrowAsJavaScriptException();
       return env.Null();
     }
@@ -283,8 +283,10 @@ Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
   int status = mg_session_run(session_, query.c_str(), mg_params, NULL);
   mg_map_destroy(mg_params);
   if (status != 0) {
-    // TODO(gitbuda): Propagate Memgraph error to the user.
-    Napi::Error::New(env, NODEMG_MSG_RUN_FAIL).ThrowAsJavaScriptException();
+    std::string execute_error(NODEMG_MSG_EXEC_FAIL);
+    execute_error.append(" ");
+    execute_error.append(mg_session_error(session_));
+    Napi::Error::New(env, execute_error).ThrowAsJavaScriptException();
     return env.Null();
   }
   mg_result *result;
@@ -299,4 +301,3 @@ Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
   }
   return scope.Escape(napi_value(data));
 }
-

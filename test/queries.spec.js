@@ -217,3 +217,14 @@ test('Use query parameters', async () => {
     );
   }, port);
 }, 10000);
+
+test('Query parameters not provided', async () => {
+  const port = await getPort();
+  await util.checkAgainstMemgraph(() => {
+    const connection = memgraph.connect({ host: 'localhost', port: port });
+    expect(connection).toBeDefined();
+    expect(() => {
+      connection.execute(query.CREATE_NODE_USING_PARAMS);
+    }).toThrow();
+  }, port);
+}, 10000);

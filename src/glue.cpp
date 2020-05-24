@@ -242,11 +242,11 @@ std::optional<Napi::Value> MgValueToNapiValue(Napi::Env env,
       return scope.Escape(napi_value(*path_value));
     }
     case MG_VALUE_TYPE_UNKNOWN:
-      Napi::Error::New(env, NODEMG_MSG_UNKNOWN_TYPE_ERROR)
+      Napi::Error::New(env, NODEMG_MSG_EXEC_UNKNOWN_TYPE_ERROR)
           .ThrowAsJavaScriptException();
       return std::nullopt;
     default:
-      Napi::TypeError::New(env, NODEMG_MSG_UNRECOGNIZED_TYPE_ERROR)
+      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNRECOGNIZED_TYPE_ERROR)
           .ThrowAsJavaScriptException();
       return std::nullopt;
   }
@@ -258,7 +258,7 @@ std::optional<mg_list *> NapiArrayToMgList(Napi::Env env,
   output_list = mg_list_make_empty(input_array.Length());
   if (!output_list) {
     mg_list_destroy(output_list);
-    Napi::TypeError::New(env, NODEMG_MSG_UNABLE_TO_CONSTRUCT_MG_LIST)
+    Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_LIST)
         .ThrowAsJavaScriptException();
     return std::nullopt;
   }
@@ -266,13 +266,14 @@ std::optional<mg_list *> NapiArrayToMgList(Napi::Env env,
     auto maybe_value = NapiValueToMgValue(env, input_array[index]);
     if (!maybe_value) {
       mg_list_destroy(output_list);
-      Napi::TypeError::New(env, NODEMG_MSG_UNABLE_TO_CONSTRUCT_MG_VALUE)
+      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_VALUE)
           .ThrowAsJavaScriptException();
       return std::nullopt;
     }
     if (mg_list_append(output_list, *maybe_value) != 0) {
       mg_list_destroy(output_list);
-      Napi::TypeError::New(env, NODEMG_MSG_UNABLE_TO_APPEND_MG_LIST_VALUE)
+      Napi::TypeError::New(env,
+                           NODEMG_MSG_EXEC_UNABLE_TO_APPEND_VALUE_TO_MG_LIST)
           .ThrowAsJavaScriptException();
       return std::nullopt;
     }
@@ -292,7 +293,8 @@ std::optional<mg_value *> NapiValueToMgValue(Napi::Env env,
     bool lossless;
     int64_t as_int64 = input_value.As<Napi::BigInt>().Int64Value(&lossless);
     if (!lossless) {
-      Napi::TypeError::New(env, NODEMG_MSG_UNABLE_TO_LOSSLESSLY_CONVERT_INT)
+      Napi::TypeError::New(env,
+                           NODEMG_MSG_EXEC_UNABLE_TO_LOSSLESSLY_CONVERT_INT)
           .ThrowAsJavaScriptException();
       return std::nullopt;
     }
@@ -304,7 +306,7 @@ std::optional<mg_value *> NapiValueToMgValue(Napi::Env env,
     mg_string *input_mg_string =
         mg_string_make(input_value.As<Napi::String>().Utf8Value().c_str());
     if (!input_mg_string) {
-      Napi::TypeError::New(env, NODEMG_MSG_UNABLE_TO_CONSTRUCT_STRING)
+      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_STRING)
           .ThrowAsJavaScriptException();
       return std::nullopt;
     }
@@ -312,7 +314,7 @@ std::optional<mg_value *> NapiValueToMgValue(Napi::Env env,
   } else if (input_value.IsArray()) {
     auto maybe_mg_list = NapiArrayToMgList(env, input_value.As<Napi::Array>());
     if (!maybe_mg_list) {
-      Napi::TypeError::New(env, NODEMG_MSG_UNABLE_TO_CONSTRUCT_MG_LIST)
+      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_LIST)
           .ThrowAsJavaScriptException();
       return std::nullopt;
     }
@@ -320,18 +322,18 @@ std::optional<mg_value *> NapiValueToMgValue(Napi::Env env,
   } else if (input_value.IsObject()) {
     auto maybe_mg_map = NapiObjectToMgMap(env, input_value.As<Napi::Object>());
     if (!maybe_mg_map) {
-      Napi::TypeError::New(env, NODEMG_MSG_UNABLE_TO_CONSTRUCT_MG_MAP)
+      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_MAP)
           .ThrowAsJavaScriptException();
       return std::nullopt;
     }
     output_value = mg_value_make_map(*maybe_mg_map);
   } else {
-    Napi::TypeError::New(env, NODEMG_MSG_UNABLE_TO_CONSTRUCT_VALUE)
+    Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNRECOGNIZED_JS_VALUE)
         .ThrowAsJavaScriptException();
     return std::nullopt;
   }
   if (!output_value) {
-    Napi::TypeError::New(env, NODEMG_MSG_UNABLE_TO_CONSTRUCT_MG_VALUE)
+    Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_VALUE)
         .ThrowAsJavaScriptException();
     return std::nullopt;
   }
@@ -345,7 +347,7 @@ std::optional<mg_map *> NapiObjectToMgMap(Napi::Env env,
   output_map = mg_map_make_empty(keys.Length());
   if (!output_map) {
     mg_map_destroy(output_map);
-    Napi::TypeError::New(env, NODEMG_MSG_UNABLE_TO_CONSTRUCT_MG_MAP)
+    Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_MAP)
         .ThrowAsJavaScriptException();
     return std::nullopt;
   }
@@ -355,20 +357,20 @@ std::optional<mg_map *> NapiObjectToMgMap(Napi::Env env,
         mg_string_make(napi_key.As<Napi::String>().Utf8Value().c_str());
     if (!mg_key) {
       mg_map_destroy(output_map);
-      Napi::TypeError::New(env, NODEMG_MSG_UNABLE_TO_CONSTRUCT_STRING)
+      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_STRING)
           .ThrowAsJavaScriptException();
       return std::nullopt;
     }
     auto maybe_mg_value = NapiValueToMgValue(env, input_object.Get(napi_key));
     if (!maybe_mg_value) {
       mg_map_destroy(output_map);
-      Napi::TypeError::New(env, NODEMG_MSG_UNABLE_TO_CONSTRUCT_MG_VALUE)
+      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_VALUE)
           .ThrowAsJavaScriptException();
       return std::nullopt;
     }
     if (mg_map_insert_unsafe2(output_map, mg_key, *maybe_mg_value) != 0) {
       mg_map_destroy(output_map);
-      Napi::TypeError::New(env, NODEMG_MSG_UNABLE_TO_ADD_TO_MAP)
+      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_ADD_TO_MG_MAP)
           .ThrowAsJavaScriptException();
       return std::nullopt;
     }
