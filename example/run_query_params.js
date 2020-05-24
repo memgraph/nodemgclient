@@ -12,18 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <napi.h>
+const memgraph = require('../lib');
 
-#include <mgclient.h>
+const connection = memgraph.connect({ host: 'localhost', port: 7687 });
 
-[[nodiscard]] std::optional<Napi::Value> MgValueToNapiValue(
-    Napi::Env env, const mg_value *input_value);
-
-[[nodiscard]] std::optional<Napi::Value> MgListToNapiArray(
-    Napi::Env env, const mg_list *input_list);
-
-[[nodiscard]] std::optional<mg_value *> NapiValueToMgValue(
-    Napi::Env env, Napi::Value input_value);
-
-[[nodiscard]] std::optional<mg_map *> NapiObjectToMgMap(
-    Napi::Env env, Napi::Object input_value);
+connection.execute('CREATE (n:Node {name: $name});', { name: 'John Swan' });
+console.log(connection.execute('MATCH (n) RETURN n;')[0][0].properties);
