@@ -180,3 +180,40 @@ test('Create path and fetch unbound relationship', async () => {
     );
   }, port);
 }, 10000);
+
+test('Use query parameters', async () => {
+  const port = await getPort();
+  await util.checkAgainstMemgraph(() => {
+    const connection = memgraph.connect({ host: 'localhost', port: port });
+    expect(connection).toBeDefined();
+    connection.execute(query.DELETE_ALL);
+    connection.execute(query.CREATE_NODE_USING_PARAMS, {
+      nullProperty: null,
+      trueProperty: true,
+      falseProperty: false,
+      bigIntProperty: 10n,
+      numberProperty: 10.5,
+      stringProperty: 'string test',
+      arrayProperty: ['one', 'two'],
+      objectProperty: { one: 'one', two: 'two' },
+    });
+    const nodesNo = connection.execute(query.COUNT_NODES);
+    expect(nodesNo[0][0]).toEqual(1n);
+    const node = connection.execute(query.NODES)[0][0];
+    expect(node).toEqual(
+      expect.objectContaining({
+        id: 0n,
+        labels: ['Node'],
+        properties: {
+          trueProperty: true,
+          falseProperty: false,
+          bigIntProperty: 10n,
+          numberProperty: 10.5,
+          stringProperty: 'string test',
+          arrayProperty: ['one', 'two'],
+          objectProperty: { one: 'one', two: 'two' },
+        },
+      }),
+    );
+  }, port);
+}, 10000);

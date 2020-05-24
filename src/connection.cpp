@@ -245,18 +245,45 @@ Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
   Napi::EscapableHandleScope scope(env);
 
-  if (info.Length() != 1) {
-    Napi::Error::New(env, NODEMG_MSG_WRONG_EXECUTE_ARG)
+  if (info.Length() < 1 || info.Length() > 2) {
+    Napi::Error::New(env, NODEMG_MSG_WRONG_EXECUTE_ARGS)
         .ThrowAsJavaScriptException();
     return env.Null();
   }
-  auto query = info[0].As<Napi::String>().Utf8Value();
+  std::string query;
+  mg_map *mg_params = NULL;
+  if (info.Length() == 1 || info.Length() == 2) {
+    auto maybe_query = info[0];
+    if (!maybe_query.IsString()) {
+      Napi::Error::New(env, NODEMG_MSG_QUERY_STRING_ERROR)
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
+    query = maybe_query.As<Napi::String>().Utf8Value();
+  }
+  if (info.Length() == 2) {
+    auto maybe_params = info[1];
+    if (!maybe_params.IsObject()) {
+      Napi::Error::New(env, NODEMG_MSG_QUERY_PARAMS_ERROR)
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
+    auto params = maybe_params.As<Napi::Object>();
+    auto maybe_mg_params = NapiObjectToMgMap(env, params);
+    if (!maybe_mg_params) {
+      Napi::Error::New(env, NODEMG_MSG_QUERY_PARAMS_ALLOC_FAIL)
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
+    mg_params = *maybe_mg_params;
+  }
 
-  // TODO(gitbuda): Pass query parameters.
   // TODO(gitbuda): Deal with columns.
 
-  int status = mg_session_run(session_, query.c_str(), NULL, NULL);
+  int status = mg_session_run(session_, query.c_str(), mg_params, NULL);
+  mg_map_destroy(mg_params);
   if (status != 0) {
+    // TODO(gitbuda): Propagate Memgraph error to the user.
     Napi::Error::New(env, NODEMG_MSG_RUN_FAIL).ThrowAsJavaScriptException();
     return env.Null();
   }

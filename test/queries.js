@@ -52,4 +52,13 @@ module.exports = Object.freeze({
   MATCH_RELATIONSHIPS: `
     MATCH path=(endNode {id: 2})<-[]-(startNode {id: 1})
     RETURN relationships(path);`,
+  CREATE_NODE_USING_PARAMS: `
+    CREATE (n:Node {nullProperty: $nullProperty,
+                    trueProperty: $trueProperty,
+                    falseProperty: $falseProperty,
+                    bigIntProperty: $bigIntProperty,
+                    numberProperty: $numberProperty,
+                    stringProperty: $stringProperty,
+                    arrayProperty: $arrayProperty,
+                    objectProperty: $objectProperty});`,
 });
