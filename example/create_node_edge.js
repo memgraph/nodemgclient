@@ -15,11 +15,11 @@
 const memgraph = require('../lib');
 const query = require('../test/queries');
 
-const connection = memgraph.connect({ host: 'localhost', port: 7687 });
+const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
 
-connection.execute(query.DELETE_ALL);
-connection.execute(query.CREATE_RICH_NODE);
-connection.execute(query.CREATE_RICH_EDGE);
+connection.Execute(query.DELETE_ALL).Records();
+connection.Execute(query.CREATE_RICH_NODE).Records();
+connection.Execute(query.CREATE_RICH_EDGE).Records();
 
-console.log(connection.execute(query.NODES));
-console.log(connection.execute(query.EDGES));
+console.log(connection.Execute(query.NODES).Records());
+console.log(connection.Execute(query.EDGES).Records());

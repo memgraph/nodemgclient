@@ -27,7 +27,8 @@ set_project_warnings(project_warnings)
 
 # Define the addon.
 include_directories(${CMAKE_JS_INC})
-set(SOURCE_FILES src/addon.cpp src/connection.cpp src/glue.cpp)
+set(SOURCE_FILES src/addon.cpp src/connection.cpp src/glue.cpp
+                 src/record.cpp src/result.cpp)
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME} PRIVATE

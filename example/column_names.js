@@ -18,7 +18,10 @@ const query = require('../test/queries');
 const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
 
 connection.Execute(query.DELETE_ALL).Records();
-connection.Execute(query.CREATE_PATH).Records();
-const paths = connection.Execute(query.MATCH_PATHS).Records();
 
-console.log(paths);
+const result = connection.Execute(`RETURN "value_x" AS x, "value_y" AS y;`);
+console.log(result.Columns());
+const records = result.Records();
+console.log(records[0].Values());
+console.log(records[0].Get('x'));
+console.log(records[0].Get('y'));

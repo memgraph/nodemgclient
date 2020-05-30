@@ -15,7 +15,7 @@
 const memgraph = require('../lib');
 const query = require('../test/queries');
 
-const connection = memgraph.connect({
+const connection = memgraph.Connect({
   host: 'localhost',
   port: 7687,
   username: 'admin',
@@ -34,8 +34,8 @@ const connection = memgraph.connect({
   },
 });
 
-const nodesNo = connection.execute(query.COUNT_NODES);
-const edgesNo = connection.execute(query.COUNT_EDGES);
+const nodesNo = connection.Execute(query.COUNT_NODES).Records();
+const edgesNo = connection.Execute(query.COUNT_EDGES).Records();
 
-console.log('Number of Nodes: ' + nodesNo[0][0]);
-console.log('Number of Edges: ' + edgesNo[0][0]);
+console.log('Number of Nodes: ' + nodesNo[0].Values()[0]);
+console.log('Number of Edges: ' + edgesNo[0].Values()[0]);

@@ -15,6 +15,7 @@
 #include "connection.hpp"
 #include "glue.hpp"
 #include "message.hpp"
+#include "result.hpp"
 
 struct TrustData {
   TrustData(Napi::Env e, Napi::Function callback)
@@ -61,28 +62,6 @@ static int execute_trust_callback(const char *hostname, const char *ip_address,
   } else {
     return -1;
   }
-}
-
-Napi::FunctionReference Connection::constructor;
-
-Connection::~Connection() {
-  if (session_) {
-    mg_session_destroy(session_);
-    session_ = nullptr;
-  }
-}
-
-Napi::Object Connection::Init(Napi::Env env, Napi::Object exports) {
-  Napi::HandleScope scope(env);
-
-  Napi::Function func = DefineClass(
-      env, "Connection", {InstanceMethod("execute", &Connection::Execute)});
-
-  constructor = Napi::Persistent(func);
-  constructor.SuppressDestruct();
-
-  exports.Set("Connection", func);
-  return exports;
 }
 
 Connection::Connection(const Napi::CallbackInfo &info)
@@ -235,10 +214,32 @@ Connection::Connection(const Napi::CallbackInfo &info)
   }
 }
 
+Napi::FunctionReference Connection::constructor;
+
+Napi::Object Connection::Init(Napi::Env env, Napi::Object exports) {
+  Napi::HandleScope scope(env);
+
+  Napi::Function func = DefineClass(
+      env, "Connection", {InstanceMethod("Execute", &Connection::Execute)});
+
+  constructor = Napi::Persistent(func);
+  constructor.SuppressDestruct();
+
+  exports.Set("Connection", func);
+  return exports;
+}
+
 Napi::Object Connection::NewInstance(Napi::Env env, Napi::Value params) {
   Napi::EscapableHandleScope scope(env);
   Napi::Object obj = constructor.New({params});
   return scope.Escape(napi_value(obj)).ToObject();
+}
+
+Connection::~Connection() {
+  if (session_) {
+    mg_session_destroy(session_);
+    session_ = nullptr;
+  }
 }
 
 Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
@@ -277,10 +278,10 @@ Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
     }
     mg_params = *maybe_mg_params;
   }
+  const mg_list *mg_columns;
+  std::optional<Napi::Value> columns;
 
-  // TODO(gitbuda): Deal with columns.
-
-  int status = mg_session_run(session_, query.c_str(), mg_params, NULL);
+  int status = mg_session_run(session_, query.c_str(), mg_params, &mg_columns);
   mg_map_destroy(mg_params);
   if (status != 0) {
     std::string execute_error(NODEMG_MSG_EXEC_FAIL);
@@ -289,15 +290,16 @@ Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
     Napi::Error::New(env, execute_error).ThrowAsJavaScriptException();
     return env.Null();
   }
-  mg_result *result;
-  uint32_t index = 0;
-  auto data = Napi::Array::New(env);
-  while ((status = mg_session_pull(session_, &result)) == 1) {
-    auto row = MgListToNapiArray(env, mg_result_row(result));
-    if (!row) {
-      return scope.Escape(napi_value(env.Null()));
-    }
-    data[index++] = *row;
+  if (mg_columns) {
+    columns = MgListToNapiArray(env, mg_columns);
   }
-  return scope.Escape(napi_value(data));
+
+  if (columns) {
+    return scope.Escape(napi_value(Result::constructor.New(
+        {Napi::External<mg_session>::New(env, session_), *columns})));
+  } else {
+    return scope.Escape(napi_value(
+        Result::constructor.New({Napi::External<mg_session>::New(env, session_),
+                                 Napi::Array::New(env)})));
+  }
 }
