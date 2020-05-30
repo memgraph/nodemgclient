@@ -255,5 +255,11 @@ test('Result columns', async () => {
     expect(records[0].Values()).toEqual(['value_x', 'value_y']);
     expect(records[0].Get('x')).toEqual('value_x');
     expect(records[0].Get('y')).toEqual('value_y');
+    expect(() => {
+      records[0].Get();
+    }).toThrow();
+    expect(() => {
+      records[0].Get(null);
+    }).toThrow();
   }, port);
 }, 10000);
