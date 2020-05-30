@@ -12,13 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const memgraph = require('../lib');
-const query = require('../test/queries');
+#include <map>
+#include <string>
 
-const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
+#include <mgclient.h>
+#include <napi.h>
 
-connection.Execute(query.DELETE_ALL).Records();
-connection.Execute(query.CREATE_PATH).Records();
-const paths = connection.Execute(query.MATCH_PATHS).Records();
+// TODO(gitbuda): Implement a stringify method.
 
-console.log(paths);
+class Result : public Napi::ObjectWrap<Result> {
+ public:
+  Result(const Napi::CallbackInfo &info);
+  static Napi::FunctionReference constructor;
+  static Napi::Object Init(Napi::Env env, Napi::Object exports);
+
+  Napi::Value Columns(const Napi::CallbackInfo &info);
+  Napi::Value Records(const Napi::CallbackInfo &info);
+
+ private:
+  mg_session *mg_session_{nullptr};
+  std::map<std::string, uint32_t> columns_;
+};

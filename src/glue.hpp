@@ -19,6 +19,7 @@
 [[nodiscard]] std::optional<Napi::Value> MgValueToNapiValue(
     Napi::Env env, const mg_value *input_value);
 
+// TODO(gitbuda): Figure out how to put Napi::Array as a return value.
 [[nodiscard]] std::optional<Napi::Value> MgListToNapiArray(
     Napi::Env env, const mg_list *input_list);
 

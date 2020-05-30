@@ -61,4 +61,5 @@ module.exports = Object.freeze({
                     stringProperty: $stringProperty,
                     arrayProperty: $arrayProperty,
                     objectProperty: $objectProperty});`,
+  NAMED_COLUMNS: `RETURN "value_x" AS x, "value_y" AS y;`,
 });

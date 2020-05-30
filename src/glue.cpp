@@ -28,15 +28,15 @@ std::optional<Napi::Value> MgListToNapiArray(Napi::Env env,
   Napi::EscapableHandleScope scope(env);
 
   auto input_list_size = mg_list_size(input_list);
-  auto output_list = Napi::Array::New(env, input_list_size);
+  auto output_array = Napi::Array::New(env, input_list_size);
   for (uint32_t index = 0; index < input_list_size; ++index) {
     auto value = MgValueToNapiValue(env, mg_list_at(input_list, index));
     if (!value) {
       return std::nullopt;
     }
-    output_list[index] = *value;
+    output_array[index] = *value;
   }
-  return scope.Escape(napi_value(output_list));
+  return scope.Escape(output_array);
 }
 
 std::optional<Napi::Value> MgMapToNapiObject(Napi::Env env,
