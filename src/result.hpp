@@ -28,6 +28,7 @@ class Result : public Napi::ObjectWrap<Result> {
 
   Napi::Value Columns(const Napi::CallbackInfo &info);
   Napi::Value Records(const Napi::CallbackInfo &info);
+  Napi::Value Stream(const Napi::CallbackInfo &info);
 
  private:
   mg_session *mg_session_{nullptr};

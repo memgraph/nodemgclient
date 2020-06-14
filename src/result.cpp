@@ -47,6 +47,7 @@ Napi::Object Result::Init(Napi::Env env, Napi::Object exports) {
                   {
                       InstanceMethod("Columns", &Result::Columns),
                       InstanceMethod("Records", &Result::Records),
+                      InstanceMethod("Stream", &Result::Stream),
                   });
   constructor = Napi::Persistent(func);
   constructor.SuppressDestruct();
@@ -90,4 +91,37 @@ Napi::Value Result::Records(const Napi::CallbackInfo &info) {
   }
   deferred.Resolve(data);
   return scope.Escape(napi_value(deferred.Promise()));
+}
+
+Napi::Value Result::Stream(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+
+  Napi::Function emit = info[0].As<Napi::Function>();
+
+  // On start.
+  emit.Call({Napi::String::New(env, "start")});
+
+  // On data (for each returned record).
+  int mg_status;
+  // TODO(gitbuda): Figure out how to properly deallocate mg_result if needed.
+  mg_result *mg_result;
+  while ((mg_status = mg_session_pull(this->mg_session_, &mg_result)) == 1) {
+    auto row = MgListToNapiArray(env, mg_result_row(mg_result));
+    if (!row) {
+      // Just return null because the code returning empty row should already
+      // throw the JS error.
+      // TODO(gitbuda): Reject this properly IMPORTANT!!!
+      return env.Null();
+    }
+    emit.Call({Napi::String::New(env, "record"),
+               Record::constructor.New(
+                   {Napi::External<std::map<std::string, uint32_t>>::New(
+                        env, &this->columns_),
+                    *row})});
+  }
+
+  // On end.
+  emit.Call({Napi::String::New(env, "end")});
+
+  return Napi::String::New(env, "OK");
 }
