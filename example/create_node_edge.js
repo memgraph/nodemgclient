@@ -17,9 +17,15 @@ const query = require('../test/queries');
 
 const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
 
-connection.Execute(query.DELETE_ALL).Records();
-connection.Execute(query.CREATE_RICH_NODE).Records();
-connection.Execute(query.CREATE_RICH_EDGE).Records();
+(async () => {
+  try {
+    await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
+    await connection.ExecuteAndFetchRecords(query.CREATE_RICH_NODE);
+    await connection.ExecuteAndFetchRecords(query.CREATE_RICH_EDGE);
 
-console.log(connection.Execute(query.NODES).Records());
-console.log(connection.Execute(query.EDGES).Records());
+    console.log(await connection.ExecuteAndFetchRecords(query.NODES));
+    console.log(await connection.ExecuteAndFetchRecords(query.EDGES));
+  } catch (e) {
+    console.log(e);
+  }
+})();

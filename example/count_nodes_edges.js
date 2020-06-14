@@ -15,27 +15,33 @@
 const memgraph = require('../lib');
 const query = require('../test/queries');
 
-const connection = memgraph.Connect({
-  host: 'localhost',
-  port: 7687,
-  username: 'admin',
-  password: 'admin',
-  // eslint-disable-next-line camelcase
-  trust_callback: (hostname, ip_address, key_type, fingerprint) => {
-    console.log(hostname);
-    console.log(ip_address);
-    console.log(key_type);
-    console.log(fingerprint);
-    // TODO(gitbuda): Move this part to the documentation.
-    // console.log(xyz); -> Works fine.
-    // throw Error("error"); -> Works fine.
-    // throw 10 -> FATAL ERROR; NOTE: Napi can't handle everything.
-    return true;
-  },
-});
+(async () => {
+  try {
+    const connection = memgraph.Connect({
+      host: 'localhost',
+      port: 7687,
+      username: 'admin',
+      password: 'admin',
+      // eslint-disable-next-line camelcase
+      trust_callback: (hostname, ip_address, key_type, fingerprint) => {
+        console.log(hostname);
+        console.log(ip_address);
+        console.log(key_type);
+        console.log(fingerprint);
+        // TODO(gitbuda): Move this part to the documentation.
+        // console.log(xyz); -> Works fine.
+        // throw Error("error"); -> Works fine.
+        // throw 10 -> FATAL ERROR; NOTE: Napi can't handle everything.
+        return true;
+      },
+    });
 
-const nodesNo = connection.Execute(query.COUNT_NODES).Records();
-const edgesNo = connection.Execute(query.COUNT_EDGES).Records();
+    const nodesNo = await connection.ExecuteAndFetchRecords(query.COUNT_NODES);
+    const edgesNo = await connection.ExecuteAndFetchRecords(query.COUNT_EDGES);
 
-console.log('Number of Nodes: ' + nodesNo[0].Values()[0]);
-console.log('Number of Edges: ' + edgesNo[0].Values()[0]);
+    console.log('Number of Nodes: ' + nodesNo[0].Values()[0]);
+    console.log('Number of Edges: ' + edgesNo[0].Values()[0]);
+  } catch (e) {
+    console.log(e);
+  }
+})();
