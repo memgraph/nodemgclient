@@ -19,10 +19,6 @@
 #include "glue.hpp"
 #include "record.hpp"
 
-#include <chrono>
-#include <iostream>
-#include <thread>
-
 Result::Result(const Napi::CallbackInfo &info)
     : Napi::ObjectWrap<Result>(info) {
   // NOTE: Caller has to take care about the type of parameters.
