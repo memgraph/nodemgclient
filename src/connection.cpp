@@ -64,6 +64,7 @@ static int execute_trust_callback(const char *hostname, const char *ip_address,
   }
 }
 
+// TODO(gitbuda): Add promise.
 Connection::Connection(const Napi::CallbackInfo &info)
     : Napi::ObjectWrap<Connection>(info) {
   // Read connection parameters and establish connection if possible connection.
@@ -246,6 +247,8 @@ Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
   Napi::EscapableHandleScope scope(env);
 
+  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(env);
+
   if (info.Length() < 1 || info.Length() > 2) {
     Napi::Error::New(env, NODEMG_MSG_EXEC_WRONG_ARGS)
         .ThrowAsJavaScriptException();
@@ -293,13 +296,14 @@ Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
   if (mg_columns) {
     columns = MgListToNapiArray(env, mg_columns);
   }
-
   if (columns) {
-    return scope.Escape(napi_value(Result::constructor.New(
-        {Napi::External<mg_session>::New(env, session_), *columns})));
+    deferred.Resolve(Result::constructor.New(
+        {Napi::External<mg_session>::New(env, session_), *columns}));
   } else {
-    return scope.Escape(napi_value(
+    deferred.Resolve(
         Result::constructor.New({Napi::External<mg_session>::New(env, session_),
-                                 Napi::Array::New(env)})));
+                                 Napi::Array::New(env)}));
   }
+
+  return scope.Escape(napi_value(deferred.Promise()));
 }

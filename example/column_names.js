@@ -15,13 +15,21 @@
 const memgraph = require('../lib');
 const query = require('../test/queries');
 
-const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
+(async () => {
+  try {
+    const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
 
-connection.Execute(query.DELETE_ALL).Records();
+    await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
 
-const result = connection.Execute(`RETURN "value_x" AS x, "value_y" AS y;`);
-console.log(result.Columns());
-const records = result.Records();
-console.log(records[0].Values());
-console.log(records[0].Get('x'));
-console.log(records[0].Get('y'));
+    const result = await connection.Execute(
+      `RETURN "value_x" AS x, "value_y" AS y;`,
+    );
+    console.log(result.Columns());
+    const records = await result.Records();
+    console.log(records[0].Values());
+    console.log(records[0].Get('x'));
+    console.log(records[0].Get('y'));
+  } catch (e) {
+    console.log(e);
+  }
+})();

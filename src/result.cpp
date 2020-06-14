@@ -69,6 +69,8 @@ Napi::Value Result::Records(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
   Napi::EscapableHandleScope scope(env);
 
+  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(env);
+
   int mg_status;
   // TODO(gitbuda): Figure out how to properly deallocate mg_result if needed.
   mg_result *mg_result;
@@ -77,6 +79,8 @@ Napi::Value Result::Records(const Napi::CallbackInfo &info) {
   while ((mg_status = mg_session_pull(this->mg_session_, &mg_result)) == 1) {
     auto row = MgListToNapiArray(env, mg_result_row(mg_result));
     if (!row) {
+      // Just return null because the code returning empty row should already
+      // throw the JS error.
       return scope.Escape(napi_value(env.Null()));
     }
     data[index++] = Record::constructor.New(
@@ -84,5 +88,6 @@ Napi::Value Result::Records(const Napi::CallbackInfo &info) {
                                                               &this->columns_),
          *row});
   }
-  return scope.Escape(napi_value(data));
+  deferred.Resolve(data);
+  return scope.Escape(napi_value(deferred.Promise()));
 }

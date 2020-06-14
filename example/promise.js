@@ -15,14 +15,20 @@
 const memgraph = require('../lib');
 const query = require('../test/queries');
 
-const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
-
 (async () => {
   try {
+    // TODO(gitbuda): Design the correct interface. Connect should also return
+    // a promise.
+    const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
+
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
-    await connection.ExecuteAndFetchRecords(query.CREATE_PATH);
-    const paths = await connection.ExecuteAndFetchRecords(query.MATCH_PATHS);
-    console.log(paths);
+
+    const records = await connection.ExecuteAndFetchRecords(
+      `RETURN "value_x2" AS x, "value_y2" AS y;`,
+    );
+    console.log(records[0].Values());
+
+    await connection.ExecuteAndFetchRecords('FAIL');
   } catch (e) {
     console.log(e);
   }

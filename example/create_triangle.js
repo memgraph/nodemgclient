@@ -15,9 +15,15 @@
 const memgraph = require('../lib');
 const query = require('../test/queries');
 
-const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
+(async () => {
+  try {
+    const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
 
-connection.Execute(query.DELETE_ALL).Records();
-connection.Execute(query.CREATE_TRIANGLE).Records();
+    await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
+    await connection.ExecuteAndFetchRecords(query.CREATE_TRIANGLE);
 
-console.log(connection.Execute(query.NODE_EDGE_IDS).Records());
+    console.log(await connection.ExecuteAndFetchRecords(query.NODE_EDGE_IDS));
+  } catch (e) {
+    console.log(e);
+  }
+})();

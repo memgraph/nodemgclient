@@ -14,11 +14,19 @@
 
 const memgraph = require('../lib');
 
-const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
+(async () => {
+  try {
+    const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
 
-connection
-  .Execute('CREATE (n:Node {name: $name});', { name: 'John Swan' })
-  .Records();
-console.log(
-  connection.Execute('MATCH (n) RETURN n;').Records()[0].Values()[0].properties,
-);
+    await connection.ExecuteAndFetchRecords('CREATE (n:Node {name: $name});', {
+      name: 'John Swan',
+    });
+    console.log(
+      (
+        await connection.ExecuteAndFetchRecords('MATCH (n) RETURN n;')
+      )[0].Values()[0].properties,
+    );
+  } catch (e) {
+    console.log(e);
+  }
+})();
