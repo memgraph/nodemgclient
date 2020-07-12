@@ -20,17 +20,24 @@
 
 // TODO(gitbuda): Implement a stringify method.
 
-class Result : public Napi::ObjectWrap<Result> {
+class Connection;
+
+class Cursor : public Napi::ObjectWrap<Cursor> {
  public:
-  Result(const Napi::CallbackInfo &info);
+  Cursor(const Napi::CallbackInfo &info);
   static Napi::FunctionReference constructor;
   static Napi::Object Init(Napi::Env env, Napi::Object exports);
 
+  Napi::Value Execute(const Napi::CallbackInfo &info);
+  Napi::Value Begin(const Napi::CallbackInfo &info);
+  Napi::Value Commit(const Napi::CallbackInfo &info);
+  Napi::Value Rollback(const Napi::CallbackInfo &info);
   Napi::Value Columns(const Napi::CallbackInfo &info);
-  Napi::Value Records(const Napi::CallbackInfo &info);
   Napi::Value Stream(const Napi::CallbackInfo &info);
 
  private:
-  mg_session *mg_session_{nullptr};
+  Connection *connection_{nullptr};
   std::map<std::string, uint32_t> columns_;
+
+  void SetColumns(Napi::Env env, Napi::Value columns);
 };

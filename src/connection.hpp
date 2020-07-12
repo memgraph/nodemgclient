@@ -13,19 +13,41 @@
 // limitations under the License.
 
 #include <napi.h>
+#include <map>
 
 #include <mgclient.h>
+
+// TODO(gitbuda): Handle state based on ConnectionStatus. Testing.
+enum class ConnectionStatus {
+  Ready = 0,
+  InTransaction = 1,
+  Executing = 2,
+  Closed = 3,
+  Bad = -1
+};
 
 class Connection : public Napi::ObjectWrap<Connection> {
  public:
   Connection(const Napi::CallbackInfo &info);
   static Napi::Object Init(Napi::Env env, Napi::Object exports);
   static Napi::Object NewInstance(Napi::Env env, Napi::Value params);
+
+  Napi::Value Cursor(const Napi::CallbackInfo &info);
+
+  Napi::Value Run(const Napi::CallbackInfo &info);
+  std::pair<Napi::Value, int> Pull(Napi::Env env);
+  Napi::Value Begin(Napi::Env env);
+  Napi::Value Commit(Napi::Env env);
+  Napi::Value Rollback(Napi::Env env);
+  void DiscardAll(Napi::Env env);
+
   ~Connection();
 
  private:
   static Napi::FunctionReference constructor;
-  Napi::Value Execute(const Napi::CallbackInfo &info);
+  Napi::Value HandleError(Napi::Env env, const char *message);
+  Napi::Value RunWithoutResults(Napi::Env env, const std::string &query);
 
   mg_session *session_{nullptr};
+  ConnectionStatus status_;
 };

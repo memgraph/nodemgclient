@@ -15,8 +15,8 @@
 #include <napi.h>
 
 #include "connection.hpp"
+#include "cursor.hpp"
 #include "record.hpp"
-#include "result.hpp"
 
 Napi::Object CreateConnection(const Napi::CallbackInfo &info) {
   return Connection::NewInstance(info.Env(), info[0]);
@@ -26,7 +26,7 @@ Napi::Object InitAll(Napi::Env env, [[maybe_unused]] Napi::Object exports) {
   Napi::Object new_exports =
       Napi::Function::New(env, CreateConnection, "Connection");
   Record::Init(env, new_exports);
-  Result::Init(env, new_exports);
+  Cursor::Init(env, new_exports);
   return Connection::Init(env, new_exports);
 }
 

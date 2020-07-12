@@ -245,11 +245,11 @@ test('Result columns', async () => {
     const connection = memgraph.Connect({ host: 'localhost', port: port });
     expect(connection).toBeDefined();
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
-    const result = await connection.Execute(
+    const cursor = connection.Cursor();
+    const records = await cursor.Execute(
       `RETURN "value_x" AS x, "value_y" AS y;`,
     );
-    expect(result.Columns()).toEqual(['x', 'y']);
-    const records = await result.Records();
+    expect(cursor.Columns()).toEqual(['x', 'y']);
     expect(records[0].Values()).toEqual(['value_x', 'value_y']);
     expect(records[0].Get('x')).toEqual('value_x');
     expect(records[0].Get('y')).toEqual('value_y');

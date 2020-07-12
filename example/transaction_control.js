@@ -18,17 +18,20 @@ const query = require('../test/queries');
 (async () => {
   try {
     const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
-
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
 
     const cursor = connection.Cursor();
-    const records = await cursor.Execute(
-      `RETURN "value_x" AS x, "value_y" AS y;`,
+    cursor.Begin();
+    await cursor.Execute(`CREATE (n {name: "One"});`);
+    await cursor.Execute(`CREATE (n {name: "Two"});`);
+    cursor.Commit();
+
+    const records = await connection.ExecuteAndFetchRecords(
+      `MATCH (n) RETURN n;`,
     );
-    console.log(cursor.Columns());
-    console.log(records[0].Values());
-    console.log(records[0].Get('x'));
-    console.log(records[0].Get('y'));
+    for (const record of records) {
+      console.log(record.Values());
+    }
   } catch (e) {
     console.log(e);
   }

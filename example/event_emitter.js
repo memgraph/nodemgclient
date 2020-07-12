@@ -35,7 +35,7 @@ const emitter = new EventEmitter()
 
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
 
-    const result = await connection.Execute(
+    const result = await connection.ExecuteLazy(
       `UNWIND [0, 1] AS item RETURN "value_x2" AS x, "value_y2" AS y;`,
     );
     console.log(result);

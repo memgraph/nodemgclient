@@ -179,6 +179,10 @@ std::optional<Napi::Value> MgPathToNapiPath(Napi::Env env,
   return scope.Escape(napi_value(output_path));
 }
 
+// TODO(gitbuda): Consider the error handling because this method is used to
+// during e.g. list construction which doesn't have any error handling inside.
+// Policy has to be created. It probably makes sense to have both because
+// more granular error messages could be presented to the user.
 std::optional<Napi::Value> MgValueToNapiValue(Napi::Env env,
                                               const mg_value *input_value) {
   Napi::EscapableHandleScope scope(env);
