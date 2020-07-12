@@ -36,7 +36,7 @@ async function checkAgainstMemgraph(check, port = 7687) {
   // Waiting is not completly trivial because TCP connections is live while
   // Memgraph is still not up and running.
   // TODO(gitbuda): Replace wait with the client connection attempts.
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  await new Promise((resolve) => setTimeout(resolve, 500));
   try {
     await check();
     // eslint-disable-next-line no-useless-catch
