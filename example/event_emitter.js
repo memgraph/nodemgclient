@@ -14,21 +14,33 @@
 
 const memgraph = require('../lib');
 const query = require('../test/queries');
+const EventEmitter = require('events').EventEmitter;
+
+const emitter = new EventEmitter()
+  .on('start', () => {
+    console.log('### START ...');
+  })
+  .on('record', (record) => {
+    console.log(record.Values());
+  })
+  .on('end', () => {
+    console.log('### END ###');
+  });
 
 (async () => {
   try {
+    // TODO(gitbuda): Design the correct interface. Connect should also return
+    // a promise.
     const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
 
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
 
-    const cursor = connection.Cursor();
-    const records = await cursor.Execute(
-      `RETURN "value_x" AS x, "value_y" AS y;`,
+    const result = await connection.ExecuteLazy(
+      `UNWIND [0, 1] AS item RETURN "value_x2" AS x, "value_y2" AS y;`,
     );
-    console.log(cursor.Columns());
-    console.log(records[0].Values());
-    console.log(records[0].Get('x'));
-    console.log(records[0].Get('y'));
+    console.log(result);
+    // TODO(gitbuda): Figure out how to hide the bind call from a user.
+    result.Stream(emitter.emit.bind(emitter));
   } catch (e) {
     console.log(e);
   }

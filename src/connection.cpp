@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cassert>
+
 #include "connection.hpp"
+#include "cursor.hpp"
 #include "glue.hpp"
 #include "message.hpp"
-#include "result.hpp"
 
 struct TrustData {
   TrustData(Napi::Env e, Napi::Function callback)
@@ -213,6 +215,8 @@ Connection::Connection(const Napi::CallbackInfo &info)
     Napi::TypeError::New(env, connect_error).ThrowAsJavaScriptException();
     return;
   }
+
+  status_ = ConnectionStatus::Ready;
 }
 
 Napi::FunctionReference Connection::constructor;
@@ -221,7 +225,7 @@ Napi::Object Connection::Init(Napi::Env env, Napi::Object exports) {
   Napi::HandleScope scope(env);
 
   Napi::Function func = DefineClass(
-      env, "Connection", {InstanceMethod("Execute", &Connection::Execute)});
+      env, "Connection", {InstanceMethod("Cursor", &Connection::Cursor)});
 
   constructor = Napi::Persistent(func);
   constructor.SuppressDestruct();
@@ -243,20 +247,21 @@ Connection::~Connection() {
   }
 }
 
-Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
+Napi::Value Connection::Run(const Napi::CallbackInfo &info) {
+  assert(status_ == ConnectionStatus::Ready ||
+         status_ == ConnectionStatus::InTransaction);
+
   Napi::Env env = info.Env();
-  Napi::EscapableHandleScope scope(env);
 
-  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(env);
-
-  if (info.Length() < 1 || info.Length() > 2) {
+  // TODO(gitbuda): Consider passing the exact arguments. Remove info.
+  if (info.Length() < 1 || info.Length() > 3) {
     Napi::Error::New(env, NODEMG_MSG_EXEC_WRONG_ARGS)
         .ThrowAsJavaScriptException();
     return env.Null();
   }
   std::string query;
   mg_map *mg_params = NULL;
-  if (info.Length() == 1 || info.Length() == 2) {
+  if (info.Length() == 1 || info.Length() == 2 || info.Length() == 3) {
     auto maybe_query = info[0];
     if (!maybe_query.IsString()) {
       Napi::Error::New(env, NODEMG_MSG_EXEC_QUERY_STRING_ERROR)
@@ -265,7 +270,7 @@ Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
     }
     query = maybe_query.As<Napi::String>().Utf8Value();
   }
-  if (info.Length() == 2) {
+  if (info.Length() == 2 || info.Length() == 3) {
     auto maybe_params = info[1];
     if (!maybe_params.IsObject()) {
       Napi::Error::New(env, NODEMG_MSG_EXEC_QUERY_PARAMS_ERROR)
@@ -287,23 +292,145 @@ Napi::Value Connection::Execute(const Napi::CallbackInfo &info) {
   int status = mg_session_run(session_, query.c_str(), mg_params, &mg_columns);
   mg_map_destroy(mg_params);
   if (status != 0) {
-    std::string execute_error(NODEMG_MSG_EXEC_FAIL);
-    execute_error.append(" ");
-    execute_error.append(mg_session_error(session_));
-    Napi::Error::New(env, execute_error).ThrowAsJavaScriptException();
-    return env.Null();
-  }
-  if (mg_columns) {
-    columns = MgListToNapiArray(env, mg_columns);
-  }
-  if (columns) {
-    deferred.Resolve(Result::constructor.New(
-        {Napi::External<mg_session>::New(env, session_), *columns}));
-  } else {
-    deferred.Resolve(
-        Result::constructor.New({Napi::External<mg_session>::New(env, session_),
-                                 Napi::Array::New(env)}));
+    return HandleError(env, NODEMG_MSG_EXEC_FAIL);
   }
 
-  return scope.Escape(napi_value(deferred.Promise()));
+  if (mg_columns) {
+    columns = MgListToNapiArray(env, mg_columns);
+    if (columns) {
+      return *columns;
+    } else {
+      status_ = ConnectionStatus::Bad;
+      Napi::Error::New(env, "Unable to fetch columns from server.")
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
+  } else {
+    return Napi::Array::New(env);
+  }
+}
+
+Napi::Value Connection::Cursor(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+  return Cursor::constructor.New({Napi::External<Connection>::New(env, this)});
+}
+
+Napi::Value Connection::Begin(Napi::Env env) {
+  assert(status_ == ConnectionStatus::Ready);
+
+  // Send BEGIN command and expect no results.
+  auto run_status = RunWithoutResults(env, "BEGIN");
+  if (env.IsExceptionPending()) {
+    status_ = ConnectionStatus::Bad;
+    return run_status;
+  }
+
+  status_ = ConnectionStatus::InTransaction;
+  return env.Null();
+}
+
+Napi::Value Connection::Commit(Napi::Env env) {
+  assert(status_ == ConnectionStatus::InTransaction);
+
+  // Send COMMIT command and expect no results.
+  auto run_status = RunWithoutResults(env, "COMMIT");
+  if (env.IsExceptionPending()) {
+    status_ = ConnectionStatus::Bad;
+    return run_status;
+  }
+
+  status_ = ConnectionStatus::Ready;
+  return env.Null();
+}
+
+Napi::Value Connection::Rollback(Napi::Env env) {
+  assert(status_ == ConnectionStatus::InTransaction);
+
+  // Send COMMIT command and expect no results.
+  auto run_status = RunWithoutResults(env, "ROLLBACK");
+  if (env.IsExceptionPending()) {
+    status_ = ConnectionStatus::Bad;
+    return run_status;
+  }
+
+  status_ = ConnectionStatus::Ready;
+  return env.Null();
+}
+
+std::pair<Napi::Value, int> Connection::Pull(Napi::Env env) {
+  mg_result *mg_result;
+  int mg_status = mg_session_pull(session_, &mg_result);
+  if (mg_status != 0 && mg_status != 1) {
+    status_ = ConnectionStatus::Bad;
+    return {HandleError(env, "Unable to fetch data from server"), -1};
+  }
+  if (mg_status == 0) {
+    return {env.Null(), 0};
+  }
+  auto data = MgListToNapiArray(env, mg_result_row(mg_result));
+  if (!data) {
+    DiscardAll(env);
+    return {HandleError(env, "Unable to fetch data from server"), -1};
+  }
+  return {*data, mg_status};
+}
+
+Napi::Value Connection::HandleError(Napi::Env env, const char *message) {
+  std::string execute_error(message);
+  execute_error.append(" ");
+  execute_error.append(mg_session_error(session_));
+  Napi::Error::New(env, execute_error).ThrowAsJavaScriptException();
+  return env.Null();
+}
+
+Napi::Value Connection::RunWithoutResults(Napi::Env env,
+                                          const std::string &query) {
+  int run_status = mg_session_run(session_, query.c_str(), NULL, NULL);
+  if (run_status != 0) {
+    return HandleError(env, NODEMG_MSG_EXEC_FAIL);
+  }
+
+  while (1) {
+    mg_result *result;
+    int pull_status = mg_session_pull(session_, &result);
+    if (pull_status == 0) {
+      break;
+    }
+    // TODO(gitbuda): Improve error handling (formatting).
+    if (pull_status == 1) {
+      status_ = ConnectionStatus::Bad;
+      return HandleError(
+          env, "Unexpected data received after executing without results");
+    }
+    if (pull_status < 0) {
+      status_ = ConnectionStatus::Bad;
+      return HandleError(env,
+                         "Unexpected status after executing without results");
+    }
+  }
+
+  return env.Null();
+}
+
+void Connection::DiscardAll(Napi::Env env) {
+  int status;
+  mg_result *result;
+  while ((status = mg_session_pull(session_, &result)) == 1)
+    ;
+
+  if (status == 0) {
+    // Results are successfuly discarded.
+    Napi::Error::New(env,
+                     "There was an error fetching query results. The query has "
+                     "executed successfully but the results were discarded.")
+        .ThrowAsJavaScriptException();
+  } else {
+    // There was a database error while pulling the rest of the results.
+    status_ = ConnectionStatus::Bad;
+    HandleError(env,
+                "There was an error fetching query results. "
+                "While pulling the rest of the results from server to discard "
+                "them, another exception occurred. "
+                "It is not certain whether the query executed successfuly.");
+  }
 }
