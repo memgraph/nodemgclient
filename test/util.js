@@ -18,7 +18,7 @@ const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
 async function checkAgainstMemgraph(check, port = 7687) {
   const container = await docker.createContainer({
-    Image: 'memgraph:latest',
+    Image: 'memgraph:1.1.0-community',
     Tty: false,
     AttachStdin: false,
     AttachStdout: false,
