@@ -35,12 +35,12 @@ jobs:
       uses: actions/cache@v1
       with:
         path: ~/memgraph
-        key: cache-memgraph-v1.0.0-docker-image
+        key: cache-memgraph-v1.1.0-docker-image
     - name: Download Memgraph Docker image
       if: steps.cache-memgraph-docker.outputs.cache-hit != 'true'
       run: |
         mkdir ~/memgraph
-        curl -L https://memgraph.com/download/memgraph/v1.0.0/memgraph-1.0.0-community-docker.tar.gz > ~/memgraph/memgraph-docker.tar.gz
+        curl -L https://memgraph.com/download/memgraph/v1.1.0/memgraph-1.1.0-community-docker.tar.gz > ~/memgraph/memgraph-docker.tar.gz
     - name: Load Memgraph Docker image
       run: |
         docker load -i ~/memgraph/memgraph-docker.tar.gz
