@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <napi.h>
-#include <map>
 
 #include <mgclient.h>
 
