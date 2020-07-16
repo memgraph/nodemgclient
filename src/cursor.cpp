@@ -93,6 +93,7 @@ Napi::Value Cursor::Execute(const Napi::CallbackInfo &info) {
   }
   this->SetColumns(env, columns);
 
+  auto result = Napi::Object::New(env);
   auto data = Napi::Array::New(env);
   if (!lazy) {
     uint32_t index = 0;
@@ -105,6 +106,7 @@ Napi::Value Cursor::Execute(const Napi::CallbackInfo &info) {
         break;
       }
       if (record_data.second == 0) {
+        result.Set("summary", record_data.first);
         break;
       }
       data[index++] = Record::constructor.New(
@@ -113,7 +115,8 @@ Napi::Value Cursor::Execute(const Napi::CallbackInfo &info) {
            record_data.first});
     }
   }
-  deferred.Resolve(data);
+  result.Set("data", data);
+  deferred.Resolve(result);
   return deferred.Promise();
 }
 
@@ -143,6 +146,7 @@ Napi::Value Cursor::Stream(const Napi::CallbackInfo &info) {
       return Napi::String::New(env, "Fail to fetch data from the server");
     }
     if (record_data.second == 0) {
+      emit.Call({Napi::String::New(env, "end"), record_data.first});
       break;
     }
     emit.Call({Napi::String::New(env, "record"),
@@ -151,9 +155,6 @@ Napi::Value Cursor::Stream(const Napi::CallbackInfo &info) {
                         env, &this->columns_),
                     record_data.first})});
   }
-
-  // On end.
-  emit.Call({Napi::String::New(env, "end")});
 
   return Napi::String::New(env, "OK");
 }

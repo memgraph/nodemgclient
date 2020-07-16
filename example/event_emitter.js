@@ -18,12 +18,13 @@ const EventEmitter = require('events').EventEmitter;
 
 const emitter = new EventEmitter()
   .on('start', () => {
-    console.log('### START ...');
+    console.log('### START ###');
   })
   .on('record', (record) => {
     console.log(record.Values());
   })
-  .on('end', () => {
+  .on('end', (summary) => {
+    console.log(summary);
     console.log('### END ###');
   });
 

@@ -365,7 +365,11 @@ std::pair<Napi::Value, int> Connection::Pull(Napi::Env env) {
     return {HandleError(env, "Unable to fetch data from server"), -1};
   }
   if (mg_status == 0) {
-    return {env.Null(), 0};
+    auto summary = MgMapToNapiObject(env, mg_result_summary(mg_result));
+    if (!summary) {
+        return {HandleError(env, "Unable to fetch summary from server"), -1};
+    }
+    return {*summary, 0};
   }
   auto data = MgListToNapiArray(env, mg_result_row(mg_result));
   if (!data) {

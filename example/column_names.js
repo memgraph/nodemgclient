@@ -22,13 +22,13 @@ const query = require('../test/queries');
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
 
     const cursor = connection.Cursor();
-    const records = await cursor.Execute(
+    const result = await cursor.Execute(
       `RETURN "value_x" AS x, "value_y" AS y;`,
     );
     console.log(cursor.Columns());
-    console.log(records[0].Values());
-    console.log(records[0].Get('x'));
-    console.log(records[0].Get('y'));
+    console.log(result['data'][0].Values());
+    console.log(result['data'][0].Get('x'));
+    console.log(result['data'][0].Get('y'));
   } catch (e) {
     console.log(e);
   }

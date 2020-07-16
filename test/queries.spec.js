@@ -23,17 +23,17 @@ test('Basic data types', async () => {
   await util.checkAgainstMemgraph(async () => {
     const connection = memgraph.Connect({ host: 'localhost', port: port });
     expect(connection).toBeDefined();
-    const nullValue = (
-      await connection.ExecuteAndFetchRecords('RETURN Null;')
-    )[0].Values()[0];
+    const nullValue = (await connection.ExecuteAndFetchRecords('RETURN Null;'))[
+      'data'
+    ][0].Values()[0];
     expect(nullValue).toEqual(null);
     const listValue = (
       await connection.ExecuteAndFetchRecords('RETURN [1, 2];')
-    )[0].Values()[0];
+    )['data'][0].Values()[0];
     expect(listValue).toEqual([1n, 2n]);
     const mapValue = (
       await connection.ExecuteAndFetchRecords('RETURN {k1: 1, k2: "v"} as d;')
-    )[0].Values()[0];
+    )['data'][0].Values()[0];
     expect(mapValue).toEqual({ k1: 1n, k2: 'v' });
   }, port);
 }, 10000);
@@ -46,9 +46,9 @@ test('Basic queries', async () => {
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
     await connection.ExecuteAndFetchRecords(query.CREATE_TRIANGLE);
     const nodesNo = await connection.ExecuteAndFetchRecords(query.COUNT_NODES);
-    expect(nodesNo[0].Values()[0]).toEqual(3n);
+    expect(nodesNo['data'][0].Values()[0]).toEqual(3n);
     const edgesNo = await connection.ExecuteAndFetchRecords(query.COUNT_EDGES);
-    expect(edgesNo[0].Values()[0]).toEqual(3n);
+    expect(edgesNo['data'][0].Values()[0]).toEqual(3n);
     await expect(connection.Execute('QUERY')).rejects.toThrow();
   }, port);
 }, 10000);
@@ -60,9 +60,9 @@ test('Create and fetch a node', async () => {
     expect(connection).toBeDefined();
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
     await connection.ExecuteAndFetchRecords(query.CREATE_RICH_NODE);
-    const node = (
-      await connection.ExecuteAndFetchRecords(query.NODES)
-    )[0].Values()[0];
+    const node = (await connection.ExecuteAndFetchRecords(query.NODES))[
+      'data'
+    ][0].Values()[0];
     expect(node.id).toBeGreaterThanOrEqual(0);
     expect(node.labels).toContain('Label1');
     expect(node.labels).toContain('Label2');
@@ -82,9 +82,9 @@ test('Create and fetch a relationship', async () => {
     expect(connection).toBeDefined();
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
     await connection.ExecuteAndFetchRecords(query.CREATE_RICH_EDGE);
-    const node = (
-      await connection.ExecuteAndFetchRecords(query.EDGES)
-    )[0].Values()[0];
+    const node = (await connection.ExecuteAndFetchRecords(query.EDGES))[
+      'data'
+    ][0].Values()[0];
     expect(node.id).toBeGreaterThanOrEqual(0);
     expect(node.type).toContain('Type');
     expect(node.properties.prop1).toEqual(true);
@@ -103,12 +103,12 @@ test('Create and fetch a path', async () => {
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
     await connection.ExecuteAndFetchRecords(query.CREATE_PATH);
     const nodesNo = await connection.ExecuteAndFetchRecords(query.COUNT_NODES);
-    expect(nodesNo[0].Values()[0]).toEqual(4n);
+    expect(nodesNo['data'][0].Values()[0]).toEqual(4n);
     const edgesNo = await connection.ExecuteAndFetchRecords(query.COUNT_EDGES);
-    expect(edgesNo[0].Values()[0]).toEqual(3n);
+    expect(edgesNo['data'][0].Values()[0]).toEqual(3n);
     const data = await connection.ExecuteAndFetchRecords(query.MATCH_PATHS);
-    expect(data.length).toEqual(3);
-    const longestPath = data[2].Values()[0];
+    expect(data['data'].length).toEqual(3);
+    const longestPath = data['data'][2].Values()[0];
     expect(longestPath.nodes.length).toEqual(4);
     expect(longestPath.nodes[0]).toEqual(
       expect.objectContaining({
@@ -170,12 +170,12 @@ test('Create path and fetch unbound relationship', async () => {
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
     await connection.ExecuteAndFetchRecords(query.CREATE_PATH);
     const nodesNo = await connection.ExecuteAndFetchRecords(query.COUNT_NODES);
-    expect(nodesNo[0].Values()[0]).toEqual(4n);
+    expect(nodesNo['data'][0].Values()[0]).toEqual(4n);
     const edgesNo = await connection.ExecuteAndFetchRecords(query.COUNT_EDGES);
-    expect(edgesNo[0].Values()[0]).toEqual(3n);
+    expect(edgesNo['data'][0].Values()[0]).toEqual(3n);
     const data = (
       await connection.ExecuteAndFetchRecords(query.MATCH_RELATIONSHIPS)
-    )[0].Values()[0];
+    )['data'][0].Values()[0];
     expect(data.length).toEqual(1);
     const relationship = data[0];
     expect(relationship).toEqual(
@@ -206,10 +206,10 @@ test('Use query parameters', async () => {
       objectProperty: { one: 'one', two: 'two' },
     });
     const nodesNo = await connection.ExecuteAndFetchRecords(query.COUNT_NODES);
-    expect(nodesNo[0].Values()[0]).toEqual(1n);
-    const node = (
-      await connection.ExecuteAndFetchRecords(query.NODES)
-    )[0].Values()[0];
+    expect(nodesNo['data'][0].Values()[0]).toEqual(1n);
+    const node = (await connection.ExecuteAndFetchRecords(query.NODES))[
+      'data'
+    ][0].Values()[0];
     expect(node).toEqual(
       expect.objectContaining({
         id: 0n,
@@ -250,9 +250,9 @@ test('Result columns', async () => {
       `RETURN "value_x" AS x, "value_y" AS y;`,
     );
     expect(cursor.Columns()).toEqual(['x', 'y']);
-    expect(records[0].Values()).toEqual(['value_x', 'value_y']);
-    expect(records[0].Get('x')).toEqual('value_x');
-    expect(records[0].Get('y')).toEqual('value_y');
+    expect(records['data'][0].Values()).toEqual(['value_x', 'value_y']);
+    expect(records['data'][0].Get('x')).toEqual('value_x');
+    expect(records['data'][0].Get('y')).toEqual('value_y');
     expect(() => {
       records[0].Get();
     }).toThrow();

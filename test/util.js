@@ -47,6 +47,8 @@ async function checkAgainstMemgraph(check, port = 7687) {
   }
 }
 
+// TODO(gitbuda): Add first record util function.
+
 module.exports = {
   checkAgainstMemgraph,
 };

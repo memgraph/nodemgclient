@@ -23,6 +23,9 @@
 [[nodiscard]] std::optional<Napi::Value> MgListToNapiArray(
     Napi::Env env, const mg_list *input_list);
 
+[[nodiscard]] std::optional<Napi::Value> MgMapToNapiObject(
+    Napi::Env env, const mg_map *input_map);
+
 [[nodiscard]] std::optional<mg_value *> NapiValueToMgValue(
     Napi::Env env, Napi::Value input_value);
 

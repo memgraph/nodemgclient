@@ -39,8 +39,8 @@ const query = require('../test/queries');
     const nodesNo = await connection.ExecuteAndFetchRecords(query.COUNT_NODES);
     const edgesNo = await connection.ExecuteAndFetchRecords(query.COUNT_EDGES);
 
-    console.log('Number of Nodes: ' + nodesNo[0].Values()[0]);
-    console.log('Number of Edges: ' + edgesNo[0].Values()[0]);
+    console.log('Number of Nodes: ' + nodesNo['data'][0].Values()[0]);
+    console.log('Number of Edges: ' + edgesNo['data'][0].Values()[0]);
   } catch (e) {
     console.log(e);
   }

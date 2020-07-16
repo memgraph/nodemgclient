@@ -23,10 +23,10 @@ const query = require('../test/queries');
 
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
 
-    const records = await connection.ExecuteAndFetchRecords(
+    const result = await connection.ExecuteAndFetchRecords(
       `RETURN "value_x2" AS x, "value_y2" AS y;`,
     );
-    console.log(records[0].Values());
+    console.log(result['data'][0].Values());
 
     await connection.ExecuteAndFetchRecords('FAIL');
   } catch (e) {
