@@ -22,9 +22,9 @@ const memgraph = require('../lib');
       name: 'John Swan',
     });
     console.log(
-      (
-        await connection.ExecuteAndFetchRecords('MATCH (n) RETURN n;')
-      )[0].Values()[0].properties,
+      (await connection.ExecuteAndFetchRecords('MATCH (n) RETURN n;'))[
+        'data'
+      ][0].Values()[0].properties,
     );
   } catch (e) {
     console.log(e);

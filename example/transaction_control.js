@@ -26,10 +26,10 @@ const query = require('../test/queries');
     await cursor.Execute(`CREATE (n {name: "Two"});`);
     cursor.Commit();
 
-    const records = await connection.ExecuteAndFetchRecords(
+    const result = await connection.ExecuteAndFetchRecords(
       `MATCH (n) RETURN n;`,
     );
-    for (const record of records) {
+    for (const record of result['data']) {
       console.log(record.Values());
     }
   } catch (e) {
