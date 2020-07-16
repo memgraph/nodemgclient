@@ -45,7 +45,7 @@ test('Connect to Memgraph host via SSL multiple times', async () => {
   await util.checkAgainstMemgraph(() => {
     for (let iter = 0; iter < 100; iter++) {
       const connection = memgraph.Connect({
-        host: 'localhost',
+        address: '127.0.0.1',
         port: port,
         use_ssl: true,
       });
@@ -71,7 +71,7 @@ test('Fail because trust_callback is not callable', async () => {
   await util.checkAgainstMemgraph(() => {
     expect(() => {
       memgraph.Connect({
-        host: 'localhost',
+        address: '127.0.0.1',
         port: port,
         use_ssl: true,
         trust_callback: 'Not callable.',
@@ -85,7 +85,7 @@ test('Fail because trust_callback returns false', async () => {
   await util.checkAgainstMemgraph(() => {
     expect(() => {
       memgraph.Connect({
-        host: 'localhost',
+        address: '127.0.0.1',
         port: port,
         use_ssl: true,
         trust_callback: () => {

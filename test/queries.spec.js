@@ -21,15 +21,15 @@ const util = require('./util');
 test('Basic data types', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(async () => {
-    const connection = memgraph.Connect({ host: 'localhost', port: port });
+    const connection = memgraph.Connect({ address: '127.0.0.1', port: port });
     expect(connection).toBeDefined();
-    const nullValue = (await connection.ExecuteAndFetchRecords('RETURN Null;'))[
-      'data'
-    ][0].Values()[0];
+    const nullValue = util
+      .firstRecord(await connection.ExecuteAndFetchRecords('RETURN Null;'))
+      .Values()[0];
     expect(nullValue).toEqual(null);
-    const listValue = (
-      await connection.ExecuteAndFetchRecords('RETURN [1, 2];')
-    )['data'][0].Values()[0];
+    const listValue = util
+      .firstRecord(await connection.ExecuteAndFetchRecords('RETURN [1, 2];'))
+      .Values()[0];
     expect(listValue).toEqual([1n, 2n]);
     const mapValue = (
       await connection.ExecuteAndFetchRecords('RETURN {k1: 1, k2: "v"} as d;')
@@ -41,14 +41,18 @@ test('Basic data types', async () => {
 test('Basic queries', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(async () => {
-    const connection = memgraph.Connect({ host: 'localhost', port: port });
+    const connection = memgraph.Connect({ address: '127.0.0.1', port: port });
     expect(connection).toBeDefined();
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
     await connection.ExecuteAndFetchRecords(query.CREATE_TRIANGLE);
-    const nodesNo = await connection.ExecuteAndFetchRecords(query.COUNT_NODES);
-    expect(nodesNo['data'][0].Values()[0]).toEqual(3n);
-    const edgesNo = await connection.ExecuteAndFetchRecords(query.COUNT_EDGES);
-    expect(edgesNo['data'][0].Values()[0]).toEqual(3n);
+    const nodesNo = util.firstRecord(
+      await connection.ExecuteAndFetchRecords(query.COUNT_NODES),
+    );
+    expect(nodesNo.Values()[0]).toEqual(3n);
+    const edgesNo = util.firstRecord(
+      await connection.ExecuteAndFetchRecords(query.COUNT_EDGES),
+    );
+    expect(edgesNo.Values()[0]).toEqual(3n);
     await expect(connection.Execute('QUERY')).rejects.toThrow();
   }, port);
 }, 10000);
@@ -56,13 +60,13 @@ test('Basic queries', async () => {
 test('Create and fetch a node', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(async () => {
-    const connection = memgraph.Connect({ host: 'localhost', port: port });
+    const connection = memgraph.Connect({ address: '127.0.0.1', port: port });
     expect(connection).toBeDefined();
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
     await connection.ExecuteAndFetchRecords(query.CREATE_RICH_NODE);
-    const node = (await connection.ExecuteAndFetchRecords(query.NODES))[
-      'data'
-    ][0].Values()[0];
+    const node = util
+      .firstRecord(await connection.ExecuteAndFetchRecords(query.NODES))
+      .Values()[0];
     expect(node.id).toBeGreaterThanOrEqual(0);
     expect(node.labels).toContain('Label1');
     expect(node.labels).toContain('Label2');
@@ -78,13 +82,13 @@ test('Create and fetch a node', async () => {
 test('Create and fetch a relationship', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(async () => {
-    const connection = memgraph.Connect({ host: 'localhost', port: port });
+    const connection = memgraph.Connect({ address: '127.0.0.1', port: port });
     expect(connection).toBeDefined();
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
     await connection.ExecuteAndFetchRecords(query.CREATE_RICH_EDGE);
-    const node = (await connection.ExecuteAndFetchRecords(query.EDGES))[
-      'data'
-    ][0].Values()[0];
+    const node = util
+      .firstRecord(await connection.ExecuteAndFetchRecords(query.EDGES))
+      .Values()[0];
     expect(node.id).toBeGreaterThanOrEqual(0);
     expect(node.type).toContain('Type');
     expect(node.properties.prop1).toEqual(true);
@@ -98,14 +102,18 @@ test('Create and fetch a relationship', async () => {
 test('Create and fetch a path', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(async () => {
-    const connection = memgraph.Connect({ host: 'localhost', port: port });
+    const connection = memgraph.Connect({ address: '127.0.0.1', port: port });
     expect(connection).toBeDefined();
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
     await connection.ExecuteAndFetchRecords(query.CREATE_PATH);
-    const nodesNo = await connection.ExecuteAndFetchRecords(query.COUNT_NODES);
-    expect(nodesNo['data'][0].Values()[0]).toEqual(4n);
-    const edgesNo = await connection.ExecuteAndFetchRecords(query.COUNT_EDGES);
-    expect(edgesNo['data'][0].Values()[0]).toEqual(3n);
+    const nodesNo = util.firstRecord(
+      await connection.ExecuteAndFetchRecords(query.COUNT_NODES),
+    );
+    expect(nodesNo.Values()[0]).toEqual(4n);
+    const edgesNo = util.firstRecord(
+      await connection.ExecuteAndFetchRecords(query.COUNT_EDGES),
+    );
+    expect(edgesNo.Values()[0]).toEqual(3n);
     const data = await connection.ExecuteAndFetchRecords(query.MATCH_PATHS);
     expect(data['data'].length).toEqual(3);
     const longestPath = data['data'][2].Values()[0];
@@ -165,19 +173,23 @@ test('Create and fetch a path', async () => {
 test('Create path and fetch unbound relationship', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(async () => {
-    const connection = memgraph.Connect({ host: 'localhost', port: port });
+    const connection = memgraph.Connect({ address: '127.0.0.1', port: port });
     expect(connection).toBeDefined();
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
     await connection.ExecuteAndFetchRecords(query.CREATE_PATH);
-    const nodesNo = await connection.ExecuteAndFetchRecords(query.COUNT_NODES);
-    expect(nodesNo['data'][0].Values()[0]).toEqual(4n);
-    const edgesNo = await connection.ExecuteAndFetchRecords(query.COUNT_EDGES);
-    expect(edgesNo['data'][0].Values()[0]).toEqual(3n);
-    const data = (
-      await connection.ExecuteAndFetchRecords(query.MATCH_RELATIONSHIPS)
-    )['data'][0].Values()[0];
-    expect(data.length).toEqual(1);
-    const relationship = data[0];
+    const nodesNo = util.firstRecord(
+      await connection.ExecuteAndFetchRecords(query.COUNT_NODES),
+    );
+    expect(nodesNo.Values()[0]).toEqual(4n);
+    const edgesNo = util.firstRecord(
+      await connection.ExecuteAndFetchRecords(query.COUNT_EDGES),
+    );
+    expect(edgesNo.Values()[0]).toEqual(3n);
+    const result = await connection.ExecuteAndFetchRecords(
+      query.MATCH_RELATIONSHIPS,
+    );
+    expect(result['data'].length).toEqual(1);
+    const relationship = util.firstRecord(result).Values()[0][0];
     expect(relationship).toEqual(
       expect.objectContaining({
         startNodeId: 0n,
@@ -192,7 +204,7 @@ test('Create path and fetch unbound relationship', async () => {
 test('Use query parameters', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(async () => {
-    const connection = memgraph.Connect({ host: 'localhost', port: port });
+    const connection = memgraph.Connect({ address: '127.0.0.1', port: port });
     expect(connection).toBeDefined();
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
     await connection.ExecuteAndFetchRecords(query.CREATE_NODE_USING_PARAMS, {
@@ -205,11 +217,13 @@ test('Use query parameters', async () => {
       arrayProperty: ['one', 'two'],
       objectProperty: { one: 'one', two: 'two' },
     });
-    const nodesNo = await connection.ExecuteAndFetchRecords(query.COUNT_NODES);
-    expect(nodesNo['data'][0].Values()[0]).toEqual(1n);
-    const node = (await connection.ExecuteAndFetchRecords(query.NODES))[
-      'data'
-    ][0].Values()[0];
+    const nodesNo = util.firstRecord(
+      await connection.ExecuteAndFetchRecords(query.COUNT_NODES),
+    );
+    expect(nodesNo.Values()[0]).toEqual(1n);
+    const node = util
+      .firstRecord(await connection.ExecuteAndFetchRecords(query.NODES))
+      .Values()[0];
     expect(node).toEqual(
       expect.objectContaining({
         id: 0n,
@@ -231,7 +245,7 @@ test('Use query parameters', async () => {
 test('Query parameters not provided', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(async () => {
-    const connection = memgraph.Connect({ host: 'localhost', port: port });
+    const connection = memgraph.Connect({ address: '127.0.0.1', port: port });
     expect(connection).toBeDefined();
     await expect(
       connection.Execute(query.CREATE_NODE_USING_PARAMS),
@@ -242,22 +256,23 @@ test('Query parameters not provided', async () => {
 test('Result columns', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(async () => {
-    const connection = memgraph.Connect({ host: 'localhost', port: port });
+    const connection = memgraph.Connect({ address: '127.0.0.1', port: port });
     expect(connection).toBeDefined();
     await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
     const cursor = connection.Cursor();
-    const records = await cursor.Execute(
+    const result = await cursor.Execute(
       `RETURN "value_x" AS x, "value_y" AS y;`,
     );
     expect(cursor.Columns()).toEqual(['x', 'y']);
-    expect(records['data'][0].Values()).toEqual(['value_x', 'value_y']);
-    expect(records['data'][0].Get('x')).toEqual('value_x');
-    expect(records['data'][0].Get('y')).toEqual('value_y');
+    const record = util.firstRecord(result);
+    expect(record.Values()).toEqual(['value_x', 'value_y']);
+    expect(record.Get('x')).toEqual('value_x');
+    expect(record.Get('y')).toEqual('value_y');
     expect(() => {
-      records[0].Get();
+      record.Get();
     }).toThrow();
     expect(() => {
-      records[0].Get(null);
+      record.Get(null);
     }).toThrow();
   }, port);
 }, 10000);
