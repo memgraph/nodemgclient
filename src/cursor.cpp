@@ -28,6 +28,8 @@ Cursor::Cursor(const Napi::CallbackInfo &info)
   this->connection_ = info[0].As<Napi::External<Connection>>().Data();
 }
 
+Connection *Cursor::GetConnection() const { return this->connection_; }
+
 void Cursor::SetColumns(Napi::Env, Napi::Value columns) {
   assert(columns.IsArray());
   this->columns_.clear();
