@@ -25,6 +25,10 @@ class PromiseWorker : public Napi::AsyncWorker {
   PromiseWorker(Napi::Promise::Deferred const &d)
       : AsyncWorker(get_fake_callback(d.Env()).Value()), deferred(d) {}
 
+  /// Implement void Execute() override { ... } to fetch data in async way.
+
+  /// Used to return data to the JS engine.
+  /// The pattern is: deferred.Resolve(create_js_value(deferred.Env()));
   virtual void Resolve(Napi::Promise::Deferred const &deferred) = 0;
 
   void OnOK() override { Resolve(deferred); }
