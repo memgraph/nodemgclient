@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Connect } from '../lib/index';
+import {Connect, Connection} from '../lib/index';
 
 (async () => {
   try {
-    const connection = Connect({ host: 'localhost', port: 7687 });
+    const connection:Connection = Connect({ host: 'localhost', port: 7687 });
+    connection.Execute("MATCH (n) RETURN n;");
   } catch (e) {
     console.log(e);
   }

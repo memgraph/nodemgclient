@@ -12,19 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-declare class Result {
+// Keep in mind structural subtyping
+// https://www.typescriptlang.org/docs/handbook/type-compatibility.html
+// Keep in mind node-addon-api context
+// https://stackoverflow.com/questions/44275172/typescript-declarations-file-for-node-c-addon
+
+declare interface Record {
 }
 
-declare class Cursor {
+declare interface Cursor {
 }
 
-declare class Connection {
-  constructor(params?: any);
+declare interface Connection {
+  constructor(params?: any): Connection;
   Cursor(): Cursor;
   ExecuteLazy(query: string, params?: any): Cursor;
   Execute(query: string, params?: any): Promise<any>;
+  ExecuteAndFetchRecords(query: string, params?: any): any;
 }
 
 declare function Connect(params: any): Connection;
 
-export {Result, Cursor, Connection, Connect};
+export {Record, Cursor, Connection, Connect};

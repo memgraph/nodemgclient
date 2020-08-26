@@ -1,12 +1,16 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "lib": [ "es6", "dom" ],
     "module": "commonjs",
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "outDir": "dist",
-    "lib": [ "es6", "dom" ]
+    "sourceMap": true,
+    "target": "es6"
   },
-  "include": ["example/**/*"],
   "exclude": [
     "node_modules"
-  ]
+  ],
+  "include": ["example/**/*"]
 }
