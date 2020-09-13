@@ -8,17 +8,6 @@ jobs:
     steps:
     - name: Install system dependencies
       run: sudo apt-get install -y git cmake make gcc g++ libssl-dev
-    - name: Download mgclient
-      uses: actions/checkout@master
-      with:
-        repository: memgraph/mgclient
-    - name: Install mgclient
-      run: |
-        mkdir build
-        cd build
-        cmake ..
-        make
-        sudo make install
     - uses: actions/checkout@v1
     - uses: actions/setup-node@v1
       with:

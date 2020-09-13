@@ -18,7 +18,6 @@ sources you will need:
 * A Clang compiler supporting C11 standard.
 * A Clang compiler supporting C++17 standard.
 * Node.js >= 10.4.
-* [mgclient](https://github.com/memgraph/mgclient) (headers and the lib).
 
 Once prerequisites are in place, you can build `nodemgclient` by running:
 

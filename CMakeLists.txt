@@ -25,6 +25,27 @@ add_library(project_warnings INTERFACE)
 include(cmake/CompilerWarnings.cmake)
 set_project_warnings(project_warnings)
 
+include(ExternalProject)
+
+# Add mgclient as a library.
+ExternalProject_Add(mgclient-proj
+                    PREFIX         mgclient
+                    GIT_REPOSITORY https://github.com/memgraph/mgclient.git
+                    GIT_TAG        fa388e1d9084129d4644b3c62b89d5241ec23382
+                    CMAKE_ARGS     "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
+                                   "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+                    INSTALL_DIR    "${PROJECT_BINARY_DIR}/mgclient")
+ExternalProject_Get_Property(mgclient-proj install_dir)
+set(MGCLIENT_ROOT ${install_dir})
+set(MGCLIENT_INCLUDE_DIRS ${MGCLIENT_ROOT}/include
+    CACHE INTERNAL "Path to mgclient include directory")
+set(MGCLIENT_LIBRARY_PATH ${MGCLIENT_ROOT}/lib/libmgclient.so)
+set(MGCLIENT_LIBRARY mgclient-lib)
+add_library(${MGCLIENT_LIBRARY} SHARED IMPORTED)
+set_target_properties(${MGCLIENT_LIBRARY} PROPERTIES
+                      IMPORTED_LOCATION ${MGCLIENT_LIBRARY_PATH})
+add_dependencies(${MGCLIENT_LIBRARY} mgclient-proj)
+
 # Define the addon.
 include_directories(${CMAKE_JS_INC})
 set(SOURCE_FILES src/addon.cpp src/connection.cpp src/glue.cpp
@@ -32,7 +53,11 @@ set(SOURCE_FILES src/addon.cpp src/connection.cpp src/glue.cpp
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME} PRIVATE
-                      ${CMAKE_JS_LIB} mgclient project_warnings project_options)
+                      ${CMAKE_JS_LIB} ${MGCLIENT_LIBRARY}
+                      project_warnings project_options)
+# TODO(gitbuda): hpp wrappers don't work yet because of exceptions.
+# Exceptions are disabled in this project. Decide and adjust.
+target_include_directories(${PROJECT_NAME} PRIVATE ${MGCLIENT_INCLUDE_DIRS})
 target_compile_options(${PROJECT_NAME} PRIVATE "-fno-exceptions")
 
 # Include N-API wrappers.

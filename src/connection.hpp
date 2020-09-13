@@ -33,6 +33,8 @@ class Connection : public Napi::ObjectWrap<Connection> {
 
   Napi::Value Cursor(const Napi::CallbackInfo &info);
 
+  // TODO(gitbuda): Following functions have to be Napi indepentend.
+  // These functions will be called outside of the Node main thread.
   Napi::Value Run(const Napi::CallbackInfo &info);
   std::pair<Napi::Value, int> Pull(Napi::Env env);
   Napi::Value Begin(Napi::Env env);
