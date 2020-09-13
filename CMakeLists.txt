@@ -55,9 +55,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME} PRIVATE
                       ${CMAKE_JS_LIB} ${MGCLIENT_LIBRARY}
                       project_warnings project_options)
-# TODO(gitbuda): Cpp wrapper doesn't yet work because of exceptions.
+# TODO(gitbuda): hpp wrappers don't work yet because of exceptions.
 # Exceptions are disabled in this project. Decide and adjust.
-# target_include_directories(${PROJECT_NAME} PRIVATE ${MGCLIENT_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${MGCLIENT_INCLUDE_DIRS})
 target_compile_options(${PROJECT_NAME} PRIVATE "-fno-exceptions")
 
 # Include N-API wrappers.
