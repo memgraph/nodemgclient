@@ -15,6 +15,7 @@
   "author": "Marko Budiselic <marko.budiselic@memgraph.com>",
   "contributors": [],
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/memgraph/nodemgclient.git"
