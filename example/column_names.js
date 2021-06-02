@@ -13,6 +13,7 @@
 // limitations under the License.
 
 const query = require('../test/queries');
+const memgraph = require('../lib');
 
 (async () => {
   try {

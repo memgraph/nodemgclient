@@ -12,24 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const getPort = require('get-port');
-
-const memgraph = require('../lib');
 const query = require('./queries');
 const util = require('./util');
 
 beforeAll(async () => {
-  const connection = util.connectToLocalMg()
-  util.clearDb(connection)
+  const connection = util.connectToLocalMg();
+  util.clearDb(connection);
 });
 
 afterEach(async () => {
-  const connection = util.connectToLocalMg()
-  util.clearDb(connection)
+  const connection = util.connectToLocalMg();
+  util.clearDb(connection);
 });
 
 test('Basic data types', async () => {
-  const connection = util.connectToLocalMg()
+  const connection = util.connectToLocalMg();
   expect(connection).toBeDefined();
   const nullValue = util
     .firstRecord(await connection.ExecuteAndFetchRecords('RETURN Null;'))
@@ -42,11 +39,11 @@ test('Basic data types', async () => {
   const mapValue = (
     await connection.ExecuteAndFetchRecords('RETURN {k1: 1, k2: "v"} as d;')
   )['data'][0].Values()[0];
-  expect(mapValue).toEqual({k1: 1n, k2: 'v'});
+  expect(mapValue).toEqual({ k1: 1n, k2: 'v' });
 }, 10000);
 
 test('Basic queries', async () => {
-  const connection = util.connectToLocalMg()
+  const connection = util.connectToLocalMg();
   expect(connection).toBeDefined();
   await connection.ExecuteAndFetchRecords(query.CREATE_TRIANGLE);
   const nodesNo = util.firstRecord(
@@ -61,7 +58,7 @@ test('Basic queries', async () => {
 }, 10000);
 
 test('Create and fetch a node', async () => {
-  const connection = util.connectToLocalMg()
+  const connection = util.connectToLocalMg();
   expect(connection).toBeDefined();
   await connection.ExecuteAndFetchRecords(query.CREATE_RICH_EDGE);
   const node = util
@@ -77,7 +74,7 @@ test('Create and fetch a node', async () => {
 }, 10000);
 
 test('Create and fetch a path', async () => {
-  const connection = util.connectToLocalMg()
+  const connection = util.connectToLocalMg();
   expect(connection).toBeDefined();
   await connection.ExecuteAndFetchRecords(query.CREATE_PATH);
   const nodesNo = util.firstRecord(
@@ -96,64 +93,66 @@ test('Create and fetch a path', async () => {
   expect(longestPath.nodes[0]).toEqual(
     expect.objectContaining({
       labels: ['Label'],
-      properties: {id: 1n},
+      properties: { id: 1n },
     }),
   );
   expect(longestPath.nodes[1]).toEqual(
     expect.objectContaining({
       labels: ['Label'],
-      properties: {id: 2n},
+      properties: { id: 2n },
     }),
   );
-   expect(longestPath.nodes[2]).toEqual(
-     expect.objectContaining({
-       labels: ['Label'],
-       properties: {id: 3n},
-     }),
-   );
+  expect(longestPath.nodes[2]).toEqual(
+    expect.objectContaining({
+      labels: ['Label'],
+      properties: { id: 3n },
+    }),
+  );
   expect(longestPath.nodes[3]).toEqual(
     expect.objectContaining({
       labels: ['Label'],
-      properties: {id: 4n},
+      properties: { id: 4n },
     }),
   );
   expect(longestPath.relationships.length).toEqual(3);
   expect(
     longestPath.relationships[0]['endNodeId'] -
-    longestPath.relationships[0]['startNodeId'] == 1n)
+      longestPath.relationships[0]['startNodeId'],
+  ).toBe(1n);
   expect(longestPath.relationships[0]).toEqual(
     expect.objectContaining({
       type: 'Type',
-      properties: {id: 1n},
+      properties: { id: 1n },
     }),
   );
 
   expect(
     longestPath.relationships[1]['endNodeId'] -
-    longestPath.relationships[1]['startNodeId'] == 2n)
+      longestPath.relationships[1]['startNodeId'],
+  ).toBe(1n);
   expect(longestPath.relationships[1]).toEqual(
     expect.objectContaining({
       type: 'Type',
-      properties: {id: 2n},
+      properties: { id: 2n },
     }),
   );
 
   expect(
     longestPath.relationships[2]['endNodeId'] -
-    longestPath.relationships[2]['startNodeId'] == 3n)
+      longestPath.relationships[2]['startNodeId'],
+  ).toBe(1n);
   expect(longestPath.relationships[2]).toEqual(
     expect.objectContaining({
       type: 'Type',
-      properties: {id: 3n},
+      properties: { id: 3n },
     }),
   );
-
 }, 10000);
 
 test('Create path and fetch unbound relationship', async () => {
-  const connection = util.connectToLocalMg()
+  const connection = util.connectToLocalMg();
   expect(connection).toBeDefined();
-  
+
   await connection.ExecuteAndFetchRecords(query.CREATE_PATH);
   const nodesNo = util.firstRecord(
     await connection.ExecuteAndFetchRecords(query.COUNT_NODES),
@@ -171,15 +170,15 @@ test('Create path and fetch unbound relationship', async () => {
   expect(relationship).toEqual(
     expect.objectContaining({
       type: 'Type',
-      properties: {id: 1n},
+      properties: { id: 1n },
     }),
   );
 }, 10000);
 
 test('Use query parameters', async () => {
-  const connection = util.connectToLocalMg()
+  const connection = util.connectToLocalMg();
   expect(connection).toBeDefined();
-  
+
   await connection.ExecuteAndFetchRecords(query.CREATE_NODE_USING_PARAMS, {
     nullProperty: null,
     trueProperty: true,
@@ -188,7 +187,7 @@ test('Use query parameters', async () => {
     numberProperty: 10.5,
     stringProperty: 'string test',
     arrayProperty: ['one', 'two'],
-    objectProperty: {one: 'one', two: 'two'},
+    objectProperty: { one: 'one', two: 'two' },
   });
   const nodesNo = util.firstRecord(
     await connection.ExecuteAndFetchRecords(query.COUNT_NODES),
@@ -199,7 +198,7 @@ test('Use query parameters', async () => {
     .Values()[0];
   expect(node).toEqual(
     expect.objectContaining({
-    //  id: 0n, TODO: write better queries
+      //  id: 0n, TODO: write better queries
       labels: ['Node'],
       properties: {
         trueProperty: true,
@@ -208,14 +207,14 @@ test('Use query parameters', async () => {
         numberProperty: 10.5,
         stringProperty: 'string test',
         arrayProperty: ['one', 'two'],
-        objectProperty: {one: 'one', two: 'two'},
+        objectProperty: { one: 'one', two: 'two' },
       },
     }),
   );
 }, 10000);
 
 test('Query parameters not provided', async () => {
-  const connection = util.connectToLocalMg()
+  const connection = util.connectToLocalMg();
   expect(connection).toBeDefined();
   await expect(
     connection.Execute(query.CREATE_NODE_USING_PARAMS),
@@ -223,12 +222,10 @@ test('Query parameters not provided', async () => {
 }, 10000);
 
 test('Result columns', async () => {
-  const connection = util.connectToLocalMg()
+  const connection = util.connectToLocalMg();
   expect(connection).toBeDefined();
   const cursor = connection.Cursor();
-  const result = await cursor.Execute(
-    `RETURN "value_x" AS x, "value_y" AS y;`,
-  );
+  const result = await cursor.Execute(`RETURN "value_x" AS x, "value_y" AS y;`);
   expect(cursor.Columns()).toEqual(['x', 'y']);
   const record = util.firstRecord(result);
   expect(record.Values()).toEqual(['value_x', 'value_y']);

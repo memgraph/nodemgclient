@@ -13,8 +13,8 @@
 // limitations under the License.
 
 const assert = require('assert');
-const memgraph = require('../lib')
-const query = require('./queries')
+const memgraph = require('../lib');
+const query = require('./queries');
 
 // TODO(tbrekalo): telemetry -> disabled
 
@@ -22,7 +22,7 @@ function connectToLocalMg() {
   const connection = memgraph.Connect({
     address: '127.0.0.1',
     port: 7687,
-    use_ssl: false
+    use_ssl: false,
   });
 
   return connection;

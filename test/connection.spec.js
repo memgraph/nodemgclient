@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const getPort = require('get-port');
-
 const memgraph = require('../lib');
-const util = require('./util');
 
 // TODO(gitbuda): Add all connection params test.
 
@@ -27,16 +24,16 @@ test('Fail because connection params are not there', () => {
 
 test('Fail because both host and address are missing', () => {
   expect(() => {
-    memgraph.Connect({port: 7687, use_ssl: false});
+    memgraph.Connect({ port: 7687, use_ssl: false });
   }).toThrow();
 });
 
 test('Fail because port number is out of range', () => {
   expect(() => {
-    memgraph.Connect({host: 'localhost', port: -100, use_ssl: false});
+    memgraph.Connect({ host: 'localhost', port: -100, use_ssl: false });
   }).toThrow();
   expect(() => {
-    memgraph.Connect({host: 'localhost', port: 10000, use_ssl: false});
+    memgraph.Connect({ host: 'localhost', port: 10000, use_ssl: false });
   }).toThrow();
 });
 
