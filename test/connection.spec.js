@@ -27,101 +27,89 @@ test('Fail because connection params are not there', () => {
 
 test('Fail because both host and address are missing', () => {
   expect(() => {
-    memgraph.Connect({ port: 7687, use_ssl: true });
+    memgraph.Connect({port: 7687, use_ssl: false});
   }).toThrow();
 });
 
 test('Fail because port number is out of range', () => {
   expect(() => {
-    memgraph.Connect({ host: 'localhost', port: -100, use_ssl: true });
+    memgraph.Connect({host: 'localhost', port: -100, use_ssl: false});
   }).toThrow();
   expect(() => {
-    memgraph.Connect({ host: 'localhost', port: 10000, use_ssl: true });
+    memgraph.Connect({host: 'localhost', port: 10000, use_ssl: false});
   }).toThrow();
 });
 
 test('Connect to Memgraph host via SSL multiple times', async () => {
-  const port = await getPort();
-  await util.checkAgainstMemgraph(() => {
-    for (let iter = 0; iter < 100; iter++) {
-      const connection = memgraph.Connect({
-        address: '127.0.0.1',
-        port: port,
-        use_ssl: true,
-      });
-      expect(connection).toBeDefined();
-    }
-  }, port);
+  const port = 7687;
+  for (let iter = 0; iter < 100; iter++) {
+    const connection = memgraph.Connect({
+      address: '127.0.0.1',
+      port: port,
+      use_ssl: false,
+    });
+    expect(connection).toBeDefined();
+  }
 });
 
 test('Connect to Memgraph address via SSL', async () => {
-  const port = await getPort();
-  await util.checkAgainstMemgraph(() => {
-    const connection = memgraph.Connect({
-      address: '127.0.0.1',
-      port: port,
-      use_ssl: true,
-    });
-    expect(connection).toBeDefined();
-  }, port);
+  const port = 7687;
+  const connection = memgraph.Connect({
+    address: '127.0.0.1',
+    port: port,
+    use_ssl: false,
+  });
+  expect(connection).toBeDefined();
 });
 
 test('Fail because trust_callback is not callable', async () => {
-  const port = await getPort();
-  await util.checkAgainstMemgraph(() => {
-    expect(() => {
-      memgraph.Connect({
-        address: '127.0.0.1',
-        port: port,
-        use_ssl: true,
-        trust_callback: 'Not callable.',
-      });
-    }).toThrow();
-  }, port);
+  const port = 7687;
+  expect(() => {
+    memgraph.Connect({
+      address: '127.0.0.1',
+      port: port,
+      use_ssl: false,
+      trust_callback: 'Not callable.',
+    });
+  }).toThrow();
 });
 
 test('Fail because trust_callback returns false', async () => {
-  const port = await getPort();
-  await util.checkAgainstMemgraph(() => {
-    expect(() => {
-      memgraph.Connect({
-        address: '127.0.0.1',
-        port: port,
-        use_ssl: true,
-        trust_callback: () => {
-          return false;
-        },
-      });
-    }).toThrow();
-  }, port);
+  const port = 7687;
+  expect(() => {
+    memgraph.Connect({
+      address: '127.0.0.1',
+      port: port,
+      use_ssl: true,
+      trust_callback: () => {
+        return false;
+      },
+    });
+  }).toThrow();
 });
 
 test('trust_callback when returns true', async () => {
-  const port = await getPort();
-  await util.checkAgainstMemgraph(() => {
-    const connection = memgraph.Connect({
-      address: '127.0.0.1',
-      port: port,
-      use_ssl: true,
-      trust_callback: () => {
-        return true;
-      },
-    });
-    expect(connection).toBeDefined();
-  }, port);
+  const port = 7687;
+  const connection = memgraph.Connect({
+    address: '127.0.0.1',
+    port: port,
+    use_ssl: false,
+    trust_callback: () => {
+      return true;
+    },
+  });
+  expect(connection).toBeDefined();
 });
 
 test('trust callback received all arguments', async () => {
-  const port = await getPort();
-  await util.checkAgainstMemgraph(() => {
-    const connection = memgraph.Connect({
-      address: '127.0.0.1',
-      port: port,
-      use_ssl: true,
-      trust_callback: () => {
-        return true;
-      },
-    });
-    expect(connection).toBeDefined();
-  }, port);
+  const port = 7687;
+  const connection = memgraph.Connect({
+    address: '127.0.0.1',
+    port: port,
+    use_ssl: false,
+    trust_callback: () => {
+      return true;
+    },
+  });
+  expect(connection).toBeDefined();
 });

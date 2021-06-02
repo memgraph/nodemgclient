@@ -12,40 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const Docker = require('dockerode');
 const assert = require('assert');
+const memgraph = require('../lib')
+const query = require('./queries')
 
-const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+// TODO(tbrekalo): telemetry -> disabled
 
-async function checkAgainstMemgraph(check, port = 7687) {
-  const container = await docker.createContainer({
-    Image: 'memgraph:1.1.0-community',
-    Tty: false,
-    AttachStdin: false,
-    AttachStdout: false,
-    AttachStderr: false,
-    OpenStdin: false,
-    StdinOnce: false,
-    HostConfig: {
-      AutoRemove: true,
-      PortBindings: {
-        '7687/tcp': [{ HostPort: port.toString() }],
-      },
-    },
+function connectToLocalMg() {
+  const connection = memgraph.Connect({
+    address: '127.0.0.1',
+    port: 7687,
+    use_ssl: false
   });
-  await container.start();
-  // Waiting is not completly trivial because TCP connections is live while
-  // Memgraph is still not up and running.
-  // TODO(gitbuda): Replace wait with the client connection attempts.
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  try {
-    await check();
-    // eslint-disable-next-line no-useless-catch
-  } catch (err) {
-    throw err;
-  } finally {
-    await container.remove({ force: true });
-  }
+
+  return connection;
+}
+
+async function clearDb(connection) {
+  await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
 }
 
 function firstRecord(result) {
@@ -57,6 +41,8 @@ function firstRecord(result) {
 }
 
 module.exports = {
-  checkAgainstMemgraph,
+  connectToLocalMg,
+  clearDb,
+
   firstRecord,
 };
