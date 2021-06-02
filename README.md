@@ -22,6 +22,6 @@ sources you will need:
 Once prerequisites are in place, you can build `nodemgclient` by running:
 
 ```bash
-npm install
+npm ci
 npm run build:release
 ```

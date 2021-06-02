@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstdint>
+
 #include <napi.h>
 
 #include <mgclient.h>
 
 // TODO(gitbuda): Handle state based on ConnectionStatus. Testing.
-enum class ConnectionStatus {
+enum class ConnectionStatus : std::int8_t {
   Ready = 0,
   InTransaction = 1,
   Executing = 2,

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const memgraph = require('../lib');
 const query = require('../test/queries');
+const memgraph = require('../lib');
 
 (async () => {
   try {
