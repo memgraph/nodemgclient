@@ -26,6 +26,7 @@ async function checkAgainstMemgraph(check, port = 7687) {
     AttachStderr: false,
     OpenStdin: false,
     StdinOnce: false,
+    Cmd: ['--telemetry-enabled=False'],
     HostConfig: {
       AutoRemove: true,
       PortBindings: {
