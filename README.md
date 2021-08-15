@@ -14,14 +14,14 @@
 [mgclient](https://github.com/memgraph/mgclient). To install it from
 sources you will need:
 
-* A CMake >= 3.10.
-* A Clang compiler supporting C11 standard.
-* A Clang compiler supporting C++17 standard.
-* Node.js >= 10.4.
+* A CMake >= 3.10
+* A Clang compiler supporting C11 standard
+* A Clang compiler supporting C++17 standard
+* Node.js >= 12
 
 Once prerequisites are in place, you can build `nodemgclient` by running:
 
 ```bash
-npm install
+npm ci
 npm run build:release
 ```
