@@ -23,7 +23,8 @@ enum class ConnectionStatus : std::int8_t {
   Ready = 0,
   InTransaction = 1,
   Executing = 2,
-  Closed = 3,
+  Fetching = 3,
+  Closed = 4,
   Bad = -1
 };
 
@@ -39,6 +40,7 @@ class Connection : public Napi::ObjectWrap<Connection> {
   // These functions will be called outside of the Node main thread.
   Napi::Value Run(const Napi::CallbackInfo &info);
   std::pair<Napi::Value, int> Pull(Napi::Env env);
+  std::pair<Napi::Value, int> Fetch(Napi::Env env);
   Napi::Value Begin(Napi::Env env);
   Napi::Value Commit(Napi::Env env);
   Napi::Value Rollback(Napi::Env env);

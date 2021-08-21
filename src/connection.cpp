@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "connection.hpp"
+
 #include <cassert>
 
-#include "connection.hpp"
 #include "cursor.hpp"
 #include "glue.hpp"
 #include "message.hpp"
@@ -186,7 +187,7 @@ Connection::Connection(const Napi::CallbackInfo &info)
     mg_session_params_set_password(mg_params, mg_password);
   }
   if (mg_client_name) {
-    mg_session_params_set_client_name(mg_params, mg_client_name);
+    mg_session_params_set_user_agent(mg_params, mg_client_name);
   }
   mg_session_params_set_sslmode(mg_params, mg_ssl_mode);
   if (mg_ssl_cert) {
@@ -289,12 +290,14 @@ Napi::Value Connection::Run(const Napi::CallbackInfo &info) {
   const mg_list *mg_columns;
   std::optional<Napi::Value> columns;
 
-  int status = mg_session_run(session_, query.c_str(), mg_params, &mg_columns);
+  int status = mg_session_run(session_, query.c_str(), mg_params, NULL,
+                              &mg_columns, NULL);
   mg_map_destroy(mg_params);
   if (status != 0) {
     return HandleError(env, NODEMG_MSG_EXEC_FAIL);
   }
 
+  status_ = ConnectionStatus::Executing;
   if (mg_columns) {
     columns = MgListToNapiArray(env, mg_columns);
     if (columns) {
@@ -358,19 +361,39 @@ Napi::Value Connection::Rollback(Napi::Env env) {
 }
 
 std::pair<Napi::Value, int> Connection::Pull(Napi::Env env) {
+  assert(status_ == ConnectionStatus::Executing);
+
+  // TODO(gitbuda): Pass n to the pull call.
+  int mg_pull_status = mg_session_pull(session_, NULL);
+  if (mg_pull_status != 0) {
+    status_ = ConnectionStatus::Bad;
+    return {HandleError(env, "Unable to pull data from server"), -1};
+  }
+
+  status_ = ConnectionStatus::Fetching;
+  return {env.Null(), 0};
+}
+
+std::pair<Napi::Value, int> Connection::Fetch(Napi::Env env) {
+  assert(status_ == ConnectionStatus::Fetching);
+
   mg_result *mg_result;
-  int mg_status = mg_session_pull(session_, &mg_result);
+  int mg_status = mg_session_fetch(session_, &mg_result);
   if (mg_status != 0 && mg_status != 1) {
     status_ = ConnectionStatus::Bad;
-    return {HandleError(env, "Unable to fetch data from server"), -1};
+    return {HandleError(env, "Unable to pull data from server"), -1};
   }
+
   if (mg_status == 0) {
     auto summary = MgMapToNapiObject(env, mg_result_summary(mg_result));
     if (!summary) {
-        return {HandleError(env, "Unable to fetch summary from server"), -1};
+      status_ = ConnectionStatus::Bad;
+      return {HandleError(env, "Unable to fetch summary from server"), -1};
     }
+    status_ = ConnectionStatus::Ready;
     return {*summary, 0};
   }
+
   auto data = MgListToNapiArray(env, mg_result_row(mg_result));
   if (!data) {
     DiscardAll(env);
@@ -389,52 +412,61 @@ Napi::Value Connection::HandleError(Napi::Env env, const char *message) {
 
 Napi::Value Connection::RunWithoutResults(Napi::Env env,
                                           const std::string &query) {
-  int run_status = mg_session_run(session_, query.c_str(), NULL, NULL);
+  int run_status =
+      mg_session_run(session_, query.c_str(), NULL, NULL, NULL, NULL);
   if (run_status != 0) {
+    return HandleError(env, NODEMG_MSG_EXEC_FAIL);
+  }
+
+  int pull_status = mg_session_pull(session_, NULL);
+  if (pull_status != 0) {
     return HandleError(env, NODEMG_MSG_EXEC_FAIL);
   }
 
   while (1) {
     mg_result *result;
-    int pull_status = mg_session_pull(session_, &result);
-    if (pull_status == 0) {
+    int fetch_status = mg_session_fetch(session_, &result);
+    if (fetch_status == 1) {
+      continue;
+    }
+
+    if (fetch_status == 0) {
       break;
     }
-    // TODO(gitbuda): Improve error handling (formatting).
-    if (pull_status == 1) {
-      status_ = ConnectionStatus::Bad;
-      return HandleError(
-          env, "Unexpected data received after executing without results");
-    }
-    if (pull_status < 0) {
-      status_ = ConnectionStatus::Bad;
-      return HandleError(env,
-                         "Unexpected status after executing without results");
-    }
+
+    status_ = ConnectionStatus::Bad;
+    return HandleError(
+        env, "Unexpected data received after executing without results");
   }
 
   return env.Null();
 }
 
-void Connection::DiscardAll(Napi::Env env) {
-  int status;
-  mg_result *result;
-  while ((status = mg_session_pull(session_, &result)) == 1)
-    ;
+// TODO(gitbuda): Standardize error handling ExecuteWithout and DiscardAll.
 
-  if (status == 0) {
-    // Results are successfuly discarded.
-    Napi::Error::New(env,
-                     "There was an error fetching query results. The query has "
-                     "executed successfully but the results were discarded.")
-        .ThrowAsJavaScriptException();
-  } else {
-    // There was a database error while pulling the rest of the results.
+void Connection::DiscardAll(Napi::Env env) {
+  int pull_status = mg_session_pull(session_, NULL);
+  if (pull_status != 0) {
     status_ = ConnectionStatus::Bad;
-    HandleError(env,
-                "There was an error fetching query results. "
-                "While pulling the rest of the results from server to discard "
-                "them, another exception occurred. "
-                "It is not certain whether the query executed successfuly.");
+    Napi::Error::New(env, "There was and error while discarding.")
+        .ThrowAsJavaScriptException();
+    return;
+  }
+
+  while (1) {
+    mg_result *result;
+    int fetch_status = mg_session_fetch(session_, &result);
+    if (fetch_status == 1) {
+      continue;
+    }
+
+    if (fetch_status == 0) {
+      break;
+    }
+
+    status_ = ConnectionStatus::Bad;
+    Napi::Error::New(env, "There was and error while discarding.")
+        .ThrowAsJavaScriptException();
+    return;
   }
 }
