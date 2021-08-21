@@ -31,7 +31,7 @@ include(ExternalProject)
 ExternalProject_Add(mgclient-proj
                     PREFIX         mgclient
                     GIT_REPOSITORY https://github.com/memgraph/mgclient.git
-                    GIT_TAG        fa388e1d9084129d4644b3c62b89d5241ec23382
+                    GIT_TAG        63ffb016f2338e56ba7c5171d5f4938b6cec50f6
                     CMAKE_ARGS     "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
                                    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
                     INSTALL_DIR    "${PROJECT_BINARY_DIR}/mgclient")

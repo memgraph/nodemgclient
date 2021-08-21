@@ -93,12 +93,17 @@ Napi::Value Cursor::Execute(const Napi::CallbackInfo &info) {
   }
   this->SetColumns(env, columns);
 
+  auto pull_status = connection_->Pull(env);
+  if (pull_status.second != 0) {
+    return pull_status.first;
+  }
+
   auto result = Napi::Object::New(env);
   auto data = Napi::Array::New(env);
   if (!lazy) {
     uint32_t index = 0;
     while (true) {
-      auto record_data = connection_->Pull(env);
+      auto record_data = connection_->Fetch(env);
       if (env.IsExceptionPending()) {
         deferred.Reject(
             Napi::Error::New(env, "Fail to fetch data from the server")
@@ -140,8 +145,13 @@ Napi::Value Cursor::Stream(const Napi::CallbackInfo &info) {
   // On start.
   emit.Call({Napi::String::New(env, "start")});
 
+  auto pull_status = connection_->Pull(env);
+  if (pull_status.second != 0) {
+    return pull_status.first;
+  }
+
   while (true) {
-    auto record_data = connection_->Pull(env);
+    auto record_data = connection_->Fetch(env);
     if (env.IsExceptionPending()) {
       return Napi::String::New(env, "Fail to fetch data from the server");
     }
