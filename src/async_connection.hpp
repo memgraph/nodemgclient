@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <mgclient.h>
 #include <napi.h>
 
-#include <optional>
+#include <mgclient.hpp>
 
-[[nodiscard]] std::optional<Napi::Value> MgValueToNapiValue(
-    Napi::Env env, const mg_value *input_value);
+class AsyncConnection : public Napi::ObjectWrap<AsyncConnection> {
+ public:
+  static Napi::Object Init(Napi::Env env, Napi::Object exports);
+  static Napi::Object NewInstance(const Napi::CallbackInfo &info);
+  static Napi::FunctionReference constructor;
 
-// TODO(gitbuda): Figure out how to put Napi::Array as a return value.
-[[nodiscard]] std::optional<Napi::Value> MgListToNapiArray(
-    Napi::Env env, const mg_list *input_list);
+  AsyncConnection(const Napi::CallbackInfo &info);
+  ~AsyncConnection();
+  void SetClient(std::unique_ptr<mg::Client> client);
 
-[[nodiscard]] std::optional<Napi::Value> MgMapToNapiObject(
-    Napi::Env env, const mg_map *input_map);
+  Napi::Value Connect(const Napi::CallbackInfo &info);
+  Napi::Value Execute(const Napi::CallbackInfo &info);
 
-[[nodiscard]] std::optional<mg_value *> NapiValueToMgValue(
-    Napi::Env env, Napi::Value input_value);
-
-[[nodiscard]] std::optional<mg_map *> NapiObjectToMgMap(
-    Napi::Env env, Napi::Object input_value);
+ private:
+  std::unique_ptr<mg::Client> client_;
+};

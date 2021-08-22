@@ -12,27 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstdint>
-
+#include <mgclient.h>
 #include <napi.h>
 
-#include <mgclient.h>
+#include <cstdint>
 
-// TODO(gitbuda): Handle state based on ConnectionStatus. Testing.
-enum class ConnectionStatus : std::int8_t {
-  Ready = 0,
-  InTransaction = 1,
-  Executing = 2,
-  Fetching = 3,
-  Closed = 4,
-  Bad = -1
-};
+#include "connection_status.hpp"
 
 class Connection : public Napi::ObjectWrap<Connection> {
  public:
   Connection(const Napi::CallbackInfo &info);
   static Napi::Object Init(Napi::Env env, Napi::Object exports);
-  static Napi::Object NewInstance(Napi::Env env, Napi::Value params);
+  static Napi::Object NewInstance(const Napi::CallbackInfo &info);
 
   Napi::Value Cursor(const Napi::CallbackInfo &info);
 

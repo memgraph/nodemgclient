@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "glue.hpp"
+
 #include "message.hpp"
 
 Napi::Value MgStringToNapiString(Napi::Env env, const mg_string *input_string) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Memgraph Ltd. [https://memgraph.com]
+// Copyright (c) 2016-2021 Memgraph Ltd. [https://memgraph.com]
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -235,9 +235,9 @@ Napi::Object Connection::Init(Napi::Env env, Napi::Object exports) {
   return exports;
 }
 
-Napi::Object Connection::NewInstance(Napi::Env env, Napi::Value params) {
-  Napi::EscapableHandleScope scope(env);
-  Napi::Object obj = constructor.New({params});
+Napi::Object Connection::NewInstance(const Napi::CallbackInfo &info) {
+  Napi::EscapableHandleScope scope(info.Env());
+  Napi::Object obj = constructor.New({info[0]});
   return scope.Escape(napi_value(obj)).ToObject();
 }
 
