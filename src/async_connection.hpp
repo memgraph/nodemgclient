@@ -16,11 +16,11 @@
 
 #include <mgclient.hpp>
 
-class AsyncConnection : public Napi::ObjectWrap<AsyncConnection> {
+class AsyncConnection final : public Napi::ObjectWrap<AsyncConnection> {
  public:
+  static Napi::FunctionReference constructor;
   static Napi::Object Init(Napi::Env env, Napi::Object exports);
   static Napi::Object NewInstance(const Napi::CallbackInfo &info);
-  static Napi::FunctionReference constructor;
 
   AsyncConnection(const Napi::CallbackInfo &info);
   ~AsyncConnection();

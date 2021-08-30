@@ -38,6 +38,12 @@ Napi::Object AsyncConnection::Init(Napi::Env env, Napi::Object exports) {
   return exports;
 }
 
+Napi::Object AsyncConnection::NewInstance(const Napi::CallbackInfo &info) {
+  Napi::EscapableHandleScope scope(info.Env());
+  Napi::Object obj = constructor.New({});
+  return scope.Escape(napi_value(obj)).ToObject();
+}
+
 std::optional<mg::Client::Params> create_params(
     const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
@@ -102,10 +108,6 @@ void AsyncConnection::SetClient(std::unique_ptr<mg::Client> client) {
   this->client_ = std::move(client);
 }
 
-Napi::Value AsyncConnection::Execute(const Napi::CallbackInfo &info) {
-  return info.Env().Undefined();
-}
-
 class AsyncConnectWorker : public Napi::AsyncWorker {
  public:
   AsyncConnectWorker(const Napi::Promise::Deferred &deferred,
@@ -156,8 +158,7 @@ Napi::Value AsyncConnection::Connect(const Napi::CallbackInfo &info) {
   return deferred.Promise();
 }
 
-Napi::Object AsyncConnection::NewInstance(const Napi::CallbackInfo &info) {
-  Napi::EscapableHandleScope scope(info.Env());
-  Napi::Object obj = constructor.New({});
-  return scope.Escape(napi_value(obj)).ToObject();
+Napi::Value AsyncConnection::Execute(const Napi::CallbackInfo &info) {
+  // TODO(gitbuda): Implement AsyncConnection::Execute to fetch all data.
+  return info.Env().Undefined();
 }
