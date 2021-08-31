@@ -8,9 +8,6 @@
 
 ## Installation
 
-`nodemgclient` is a wrapper around the
-[mgclient](https://github.com/memgraph/mgclient).
-
 ### Build from Source
 
  To install `nodemgclient` from sources you will need (only Linux is tested at
@@ -18,8 +15,7 @@
 
 * OpenSSL >= 1.0.2
 * A CMake >= 3.10
-* A Clang compiler supporting C11 standard
-* A Clang compiler supporting C++17 standard
+* A Clang compiler supporting C11 and C++17 standard
 * Node.js >= 12
 
 First install the prerequisites:
@@ -30,7 +26,7 @@ First install the prerequisites:
 sudo apt install -y npm nodejs cmake make gcc g++ clang libssl-dev
 ```
 
-* On CentOS:
+* On RedHat/CentOS:
 
 ```bash
 sudo yum install -y npm nodejs cmake3 make gcc gcc-c++ clang openssl-devel
@@ -43,4 +39,8 @@ npm ci
 npm run build:release
 ```
 
-To run tests, [Docker](https://docs.docker.com/engine/install) is required.
+To test ([Docker](https://docs.docker.com/engine/install) is required) run:
+
+```bash
+npm run test
+```

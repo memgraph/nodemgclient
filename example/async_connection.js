@@ -19,7 +19,10 @@ const memgraph = require('../lib');
     const connection = memgraph.AsyncConnection();
     connection.Connect({ host: 'localhost', port: 7687 }).then((connection) => {
       console.log('Connected!');
-      console.log(connection.Execute());
+      connection.Execute('MATCH (n) RETURN n, n.name;').then((data) => {
+        console.log('Data came!');
+        console.log(data);
+      });
     });
     console.log('Connecting...');
     await new Promise((resolve) => setTimeout(resolve, 1000));

@@ -16,6 +16,7 @@
 
 #include <cassert>
 
+#include "glue.hpp"
 #include "message.hpp"
 #include "mgclient.hpp"
 
@@ -108,7 +109,7 @@ void AsyncConnection::SetClient(std::unique_ptr<mg::Client> client) {
   this->client_ = std::move(client);
 }
 
-class AsyncConnectWorker : public Napi::AsyncWorker {
+class AsyncConnectWorker final : public Napi::AsyncWorker {
  public:
   AsyncConnectWorker(const Napi::Promise::Deferred &deferred,
                      mg::Client::Params params)
@@ -116,7 +117,7 @@ class AsyncConnectWorker : public Napi::AsyncWorker {
                                         [](const Napi::CallbackInfo &) {})),
         deferred_(deferred),
         params_(std::move(params)) {}
-  ~AsyncConnectWorker() {}
+  ~AsyncConnectWorker() = default;
 
   void Execute() {
     client_ = mg::Client::Connect(params_);
@@ -158,7 +159,79 @@ Napi::Value AsyncConnection::Connect(const Napi::CallbackInfo &info) {
   return deferred.Promise();
 }
 
+class AsyncExecuteWorker final : public Napi::AsyncWorker {
+ public:
+  AsyncExecuteWorker(const Napi::Promise::Deferred &deferred,
+                     mg::Client *client, std::string query)
+      : AsyncWorker(Napi::Function::New(deferred.Promise().Env(),
+                                        [](const Napi::CallbackInfo &) {})),
+        deferred_(deferred),
+        client_(client),
+        query_(std::move(query)) {}
+  ~AsyncExecuteWorker() = default;
+
+  void Execute() {
+    auto status = client_->Execute(query_);
+    if (!status) {
+      std::string msg("Failed to async execute query.");
+      SetError(msg);
+      return;
+    }
+    data_ = client_->FetchAll();
+    if (!data_) {
+      std::string msg("Failed to fetch all data.");
+      SetError(msg);
+      return;
+    }
+  }
+
+  void OnOK() {
+    auto env = deferred_.Env();
+
+    auto output_array_value = Napi::Array::New(env, data_->size());
+    for (uint32_t outer_index = 0; outer_index < data_->size(); ++outer_index) {
+      auto inner_array = (*data_)[outer_index];
+      auto inner_array_size = inner_array.size();
+      auto inner_array_value = Napi::Array::New(env, inner_array_size);
+      for (uint32_t inner_index = 0; inner_index < inner_array_size;
+           ++inner_index) {
+        auto value = MgValueToNapiValue(env, inner_array[inner_index].ptr());
+        if (!value) {
+          std::string msg("Failed to convert fetched data.");
+          SetError(msg);
+          return;
+        }
+        inner_array_value[inner_index] = *value;
+      }
+      output_array_value[outer_index] = inner_array_value;
+    }
+
+    this->deferred_.Resolve(output_array_value);
+  }
+
+  void OnError(const Napi::Error &e) {
+    this->deferred_.Reject(Napi::Error::New(Env(), e.Message()).Value());
+  }
+
+ private:
+  Napi::Promise::Deferred deferred_;
+  mg::Client *client_;
+  std::string query_;
+  decltype(client_->FetchAll()) data_;
+};
+
 Napi::Value AsyncConnection::Execute(const Napi::CallbackInfo &info) {
-  // TODO(gitbuda): Implement AsyncConnection::Execute to fetch all data.
-  return info.Env().Undefined();
+  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
+
+  if (info.Length() != 1 || !info[0].IsString()) {
+    Napi::TypeError::New(info.Env(), NODEMG_MSG_EXEC_QUERY_STRING_ERROR)
+        .ThrowAsJavaScriptException();
+    return info.Env().Undefined();
+    ;
+  }
+  std::string query = info[0].ToString().Utf8Value();
+
+  auto wk = new AsyncExecuteWorker(deferred, client_.get(), std::move(query));
+  wk->Queue();
+  return deferred.Promise();
 }
