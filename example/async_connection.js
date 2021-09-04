@@ -23,11 +23,17 @@ const memgraph = require('../lib');
         .Execute('MATCH (n) WHERE n.name = $name RETURN n, n.name;', {
           name: 'TEST1',
         })
-        .then((_) => {
-          connection.FetchAll().then((data) => {
-            console.log('Data came!');
+        .then(async (_) => {
+          try {
+            let data = await connection.FetchAll();
             console.log(data);
-          });
+            data = await connection.FetchOne();
+            console.log(data);
+            data = await connection.FetchOne();
+            console.log(data);
+          } catch (e) {
+            console.log(e);
+          }
         });
     });
     console.log('Connecting...');

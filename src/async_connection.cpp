@@ -31,6 +31,7 @@ Napi::Object AsyncConnection::Init(Napi::Env env, Napi::Object exports) {
                       InstanceMethod("Connect", &AsyncConnection::Connect),
                       InstanceMethod("Execute", &AsyncConnection::Execute),
                       InstanceMethod("FetchAll", &AsyncConnection::FetchAll),
+                      InstanceMethod("FetchOne", &AsyncConnection::FetchOne),
                   });
 
   constructor = Napi::Persistent(func);
@@ -246,9 +247,11 @@ class AsyncFetchAllWorker final : public Napi::AsyncWorker {
   ~AsyncFetchAllWorker() = default;
 
   void Execute() {
-    data_ = client_->FetchAll();
-    if (!data_) {
-      std::string msg("Failed to fetch all data.");
+    try {
+      data_ = client_->FetchAll();
+    } catch (const std::exception &error) {
+      std::string msg =
+          std::string("Failed to fetch one data. ") + std::string(error.what());
       SetError(msg);
       return;
     }
@@ -256,6 +259,11 @@ class AsyncFetchAllWorker final : public Napi::AsyncWorker {
 
   void OnOK() {
     auto env = deferred_.Env();
+
+    if (!data_) {
+      this->deferred_.Resolve(env.Null());
+      return;
+    }
 
     auto output_array_value = Napi::Array::New(env, data_->size());
     for (uint32_t outer_index = 0; outer_index < data_->size(); ++outer_index) {
@@ -291,6 +299,66 @@ class AsyncFetchAllWorker final : public Napi::AsyncWorker {
 Napi::Value AsyncConnection::FetchAll(const Napi::CallbackInfo &info) {
   Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
   auto wk = new AsyncFetchAllWorker(deferred, client_.get());
+  wk->Queue();
+  return deferred.Promise();
+}
+
+class AsyncFetchOneWorker final : public Napi::AsyncWorker {
+ public:
+  AsyncFetchOneWorker(const Napi::Promise::Deferred &deferred,
+                      mg::Client *client)
+      : AsyncWorker(Napi::Function::New(deferred.Promise().Env(),
+                                        [](const Napi::CallbackInfo &) {})),
+        deferred_(deferred),
+        client_(client) {}
+  ~AsyncFetchOneWorker() = default;
+
+  void Execute() {
+    try {
+      data_ = client_->FetchOne();
+    } catch (const std::exception &error) {
+      std::string msg =
+          std::string("Failed to fetch one data. ") + std::string(error.what());
+      SetError(msg);
+      return;
+    }
+  }
+
+  void OnOK() {
+    auto env = deferred_.Env();
+
+    if (!data_) {
+      this->deferred_.Resolve(env.Null());
+      return;
+    }
+
+    auto array_value = Napi::Array::New(env, data_->size());
+    for (uint32_t index = 0; index < data_->size(); ++index) {
+      auto value = MgValueToNapiValue(env, (*data_)[index].ptr());
+      if (!value) {
+        std::string msg("Failed to convert fetched data.");
+        SetError(msg);
+        return;
+      }
+      array_value[index] = *value;
+    }
+
+    this->deferred_.Resolve(array_value);
+  }
+
+  void OnError(const Napi::Error &e) {
+    this->deferred_.Reject(Napi::Error::New(Env(), e.Message()).Value());
+  }
+
+ private:
+  Napi::Promise::Deferred deferred_;
+  mg::Client *client_;
+  decltype(client_->FetchOne()) data_;
+};
+
+Napi::Value AsyncConnection::FetchOne(const Napi::CallbackInfo &info) {
+  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
+  auto wk = new AsyncFetchOneWorker(deferred, client_.get());
   wk->Queue();
   return deferred.Promise();
 }
