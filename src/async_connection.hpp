@@ -46,6 +46,7 @@ class AsyncConnection final : public Napi::ObjectWrap<AsyncConnection> {
 
  private:
   std::unique_ptr<mg::Client> client_;
+  std::string version_;
 
-
+  std::optional<mg::Client::Params> CreateParams(const Napi::CallbackInfo &info);
 };

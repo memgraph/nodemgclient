@@ -47,11 +47,11 @@ Napi::Object AsyncConnection::Init(Napi::Env env, Napi::Object exports) {
 
 Napi::Object AsyncConnection::NewInstance(const Napi::CallbackInfo &info) {
   Napi::EscapableHandleScope scope(info.Env());
-  Napi::Object obj = constructor.New({});
+  Napi::Object obj = constructor.New({info[0]});
   return scope.Escape(napi_value(obj)).ToObject();
 }
 
-std::optional<mg::Client::Params> create_params(
+std::optional<mg::Client::Params> AsyncConnection::CreateParams(
     const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
   if (info.Length() < 1 || !info[0].IsObject()) {
@@ -93,6 +93,7 @@ std::optional<mg::Client::Params> create_params(
   if (!napi_client_name_value.IsUndefined()) {
     mg_params.user_agent = napi_client_name_value.ToString().Utf8Value();
   }
+  { mg_params.user_agent = "nodemgclient/" + version_; }
 
   auto napi_use_ssl_value = user_params.Get("use_ssl");
   if (!napi_use_ssl_value.IsUndefined()) {
@@ -107,7 +108,11 @@ std::optional<mg::Client::Params> create_params(
 }
 
 AsyncConnection::AsyncConnection(const Napi::CallbackInfo &info)
-    : Napi::ObjectWrap<AsyncConnection>(info), client_(nullptr) {}
+    : Napi::ObjectWrap<AsyncConnection>(info), client_(nullptr), version_("") {
+  if (info.Length() == 1) {
+    version_ = info[0].As<Napi::String>().Utf8Value();
+  }
+}
 
 AsyncConnection::~AsyncConnection() {}
 
@@ -155,7 +160,7 @@ class AsyncConnectWorker final : public Napi::AsyncWorker {
 Napi::Value AsyncConnection::Connect(const Napi::CallbackInfo &info) {
   Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
 
-  auto params = create_params(info);
+  auto params = CreateParams(info);
   if (!params) {
     return info.Env().Undefined();
   }
