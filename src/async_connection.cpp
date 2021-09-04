@@ -33,6 +33,9 @@ Napi::Object AsyncConnection::Init(Napi::Env env, Napi::Object exports) {
           InstanceMethod("FetchAll", &AsyncConnection::FetchAll),
           InstanceMethod("DiscardAll", &AsyncConnection::DiscardAll),
           InstanceMethod("FetchOne", &AsyncConnection::FetchOne),
+          InstanceMethod("Begin", &AsyncConnection::Begin),
+          InstanceMethod("Commit", &AsyncConnection::Commit),
+          InstanceMethod("Rollback", &AsyncConnection::Rollback),
       });
 
   constructor = Napi::Persistent(func);
@@ -319,7 +322,7 @@ class AsyncDiscardAllWorker final : public Napi::AsyncWorker {
       client_->DiscardAll();
     } catch (const std::exception &error) {
       std::string msg =
-          std::string("Failed to fetch one data. ") + std::string(error.what());
+          std::string("Failed to discard data. ") + std::string(error.what());
       SetError(msg);
       return;
     }
@@ -338,7 +341,6 @@ class AsyncDiscardAllWorker final : public Napi::AsyncWorker {
  private:
   Napi::Promise::Deferred deferred_;
   mg::Client *client_;
-  decltype(client_->FetchAll()) data_;
 };
 
 Napi::Value AsyncConnection::DiscardAll(const Napi::CallbackInfo &info) {
@@ -404,6 +406,99 @@ class AsyncFetchOneWorker final : public Napi::AsyncWorker {
 Napi::Value AsyncConnection::FetchOne(const Napi::CallbackInfo &info) {
   Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
   auto wk = new AsyncFetchOneWorker(deferred, client_.get());
+  wk->Queue();
+  return deferred.Promise();
+}
+
+class AsyncTxOpWoker final : public Napi::AsyncWorker {
+ public:
+  AsyncTxOpWoker(const Napi::Promise::Deferred &deferred, mg::Client *client,
+                 AsyncConnection::TxOp tx_op)
+      : AsyncWorker(Napi::Function::New(deferred.Promise().Env(),
+                                        [](const Napi::CallbackInfo &) {})),
+        deferred_(deferred),
+        client_(client),
+        tx_op_(tx_op) {}
+  ~AsyncTxOpWoker() = default;
+
+  void Execute() {
+    try {
+      switch (tx_op_) {
+        case AsyncConnection::TxOp::Begin: {
+          auto status = client_->BeginTransaction();
+          if (!status) {
+            std::string msg("Failed to BEGIN transaction.");
+            SetError(msg);
+            return;
+          }
+          break;
+        }
+        case AsyncConnection::TxOp::Commit: {
+          auto status = client_->CommitTransaction();
+          if (!status) {
+            std::string msg("Failed to COMMIT transaction.");
+            SetError(msg);
+            return;
+          }
+          break;
+        }
+        case AsyncConnection::TxOp::Rollback: {
+          auto status = client_->RollbackTransaction();
+          if (!status) {
+            std::string msg("Failed to ROLLBACK transaction.");
+            SetError(msg);
+            return;
+          }
+          break;
+        }
+        default:
+          throw std::runtime_error("Wrong transaction operation");
+      }
+    } catch (const std::exception &error) {
+      std::string msg =
+          std::string("Failed to execute transaction operation.") +
+          std::string(error.what());
+      SetError(msg);
+      return;
+    }
+  }
+
+  void OnOK() {
+    auto env = deferred_.Env();
+    // TODO(gibuda): Figure out the return value on Begin/Commit/Rollback.
+    this->deferred_.Resolve(env.Null());
+  }
+
+  void OnError(const Napi::Error &e) {
+    this->deferred_.Reject(Napi::Error::New(Env(), e.Message()).Value());
+  }
+
+ private:
+  Napi::Promise::Deferred deferred_;
+  mg::Client *client_;
+  AsyncConnection::TxOp tx_op_;
+};
+
+Napi::Value AsyncConnection::Begin(const Napi::CallbackInfo &info) {
+  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
+  auto wk =
+      new AsyncTxOpWoker(deferred, client_.get(), AsyncConnection::TxOp::Begin);
+  wk->Queue();
+  return deferred.Promise();
+}
+
+Napi::Value AsyncConnection::Commit(const Napi::CallbackInfo &info) {
+  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
+  auto wk = new AsyncTxOpWoker(deferred, client_.get(),
+                               AsyncConnection::TxOp::Commit);
+  wk->Queue();
+  return deferred.Promise();
+}
+
+Napi::Value AsyncConnection::Rollback(const Napi::CallbackInfo &info) {
+  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
+  auto wk = new AsyncTxOpWoker(deferred, client_.get(),
+                               AsyncConnection::TxOp::Rollback);
   wk->Queue();
   return deferred.Promise();
 }

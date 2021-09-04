@@ -16,6 +16,9 @@
 
 #include <mgclient.hpp>
 
+// TODO(gitbuda): Ensure AsyncConnection can't be missused in the concurrent
+// environmnt (multiple threads calling the same object).
+
 class AsyncConnection final : public Napi::ObjectWrap<AsyncConnection> {
  public:
   static Napi::FunctionReference constructor;
@@ -26,12 +29,23 @@ class AsyncConnection final : public Napi::ObjectWrap<AsyncConnection> {
   ~AsyncConnection();
   void SetClient(std::unique_ptr<mg::Client> client);
 
+  enum class TxOp {
+    Begin,
+    Commit,
+    Rollback
+  };
+
   Napi::Value Connect(const Napi::CallbackInfo &info);
   Napi::Value Execute(const Napi::CallbackInfo &info);
   Napi::Value FetchAll(const Napi::CallbackInfo &info);
   Napi::Value DiscardAll(const Napi::CallbackInfo &info);
   Napi::Value FetchOne(const Napi::CallbackInfo &info);
+  Napi::Value Begin(const Napi::CallbackInfo &info);
+  Napi::Value Commit(const Napi::CallbackInfo &info);
+  Napi::Value Rollback(const Napi::CallbackInfo &info);
 
  private:
   std::unique_ptr<mg::Client> client_;
+
+
 };

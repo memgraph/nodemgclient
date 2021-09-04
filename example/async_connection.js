@@ -39,6 +39,17 @@ const memgraph = require('../lib');
     });
     console.log('Connecting...');
     await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const txConn = await memgraph
+      .AsyncConnection()
+      .Connect({ host: 'localhost', port: 7687 });
+    await txConn.Begin();
+    await txConn.Execute('CREATE (), ();');
+    await txConn.FetchAll();
+    await txConn.Execute('CREATE (), ();');
+    const txConnData = await txConn.FetchAll();
+    console.log(txConnData);
+    await txConn.Commit();
   } catch (e) {
     console.log(e);
   }
