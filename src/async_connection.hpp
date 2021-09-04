@@ -28,6 +28,7 @@ class AsyncConnection final : public Napi::ObjectWrap<AsyncConnection> {
 
   Napi::Value Connect(const Napi::CallbackInfo &info);
   Napi::Value Execute(const Napi::CallbackInfo &info);
+  Napi::Value FetchAll(const Napi::CallbackInfo &info);
 
  private:
   std::unique_ptr<mg::Client> client_;

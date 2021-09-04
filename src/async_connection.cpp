@@ -30,6 +30,7 @@ Napi::Object AsyncConnection::Init(Napi::Env env, Napi::Object exports) {
                   {
                       InstanceMethod("Connect", &AsyncConnection::Connect),
                       InstanceMethod("Execute", &AsyncConnection::Execute),
+                      InstanceMethod("FetchAll", &AsyncConnection::FetchAll),
                   });
 
   constructor = Napi::Persistent(func);
@@ -162,21 +163,89 @@ Napi::Value AsyncConnection::Connect(const Napi::CallbackInfo &info) {
 class AsyncExecuteWorker final : public Napi::AsyncWorker {
  public:
   AsyncExecuteWorker(const Napi::Promise::Deferred &deferred,
-                     mg::Client *client, std::string query)
+                     mg::Client *client, std::string query, mg::ConstMap params)
       : AsyncWorker(Napi::Function::New(deferred.Promise().Env(),
                                         [](const Napi::CallbackInfo &) {})),
         deferred_(deferred),
         client_(client),
-        query_(std::move(query)) {}
+        query_(std::move(query)),
+        params_(std::move(params)) {}
   ~AsyncExecuteWorker() = default;
 
   void Execute() {
-    auto status = client_->Execute(query_);
+    auto status = client_->Execute(query_, params_);
     if (!status) {
       std::string msg("Failed to async execute query.");
       SetError(msg);
       return;
     }
+  }
+
+  void OnOK() {
+    auto env = deferred_.Env();
+    this->deferred_.Resolve(env.Null());
+  }
+
+  void OnError(const Napi::Error &e) {
+    this->deferred_.Reject(Napi::Error::New(Env(), e.Message()).Value());
+  }
+
+ private:
+  Napi::Promise::Deferred deferred_;
+  mg::Client *client_;
+  std::string query_;
+  mg::ConstMap params_;
+};
+
+Napi::Value AsyncConnection::Execute(const Napi::CallbackInfo &info) {
+  auto env = info.Env();
+  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(env);
+
+  std::string query;
+  mg_map *mg_params = NULL;
+  if (info.Length() == 1 || info.Length() == 2) {
+    auto maybe_query = info[0];
+    if (!maybe_query.IsString()) {
+      Napi::Error::New(env, NODEMG_MSG_EXEC_QUERY_STRING_ERROR)
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
+    query = maybe_query.As<Napi::String>().Utf8Value();
+  }
+  if (info.Length() == 2) {
+    auto maybe_params = info[1];
+    if (!maybe_params.IsObject()) {
+      Napi::Error::New(env, NODEMG_MSG_EXEC_QUERY_PARAMS_ERROR)
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
+    auto params = maybe_params.As<Napi::Object>();
+    auto maybe_mg_params = NapiObjectToMgMap(env, params);
+    if (!maybe_mg_params) {
+      Napi::Error::New(env, NODEMG_MSG_EXEC_CONSTRUCT_QUERY_PARAMS_FAIL)
+          .ThrowAsJavaScriptException();
+      return env.Null();
+    }
+    mg_params = *maybe_mg_params;
+  }
+
+  auto wk = new AsyncExecuteWorker(deferred, client_.get(), std::move(query),
+                                   mg::ConstMap(mg_params));
+  wk->Queue();
+  return deferred.Promise();
+}
+
+class AsyncFetchAllWorker final : public Napi::AsyncWorker {
+ public:
+  AsyncFetchAllWorker(const Napi::Promise::Deferred &deferred,
+                      mg::Client *client)
+      : AsyncWorker(Napi::Function::New(deferred.Promise().Env(),
+                                        [](const Napi::CallbackInfo &) {})),
+        deferred_(deferred),
+        client_(client) {}
+  ~AsyncFetchAllWorker() = default;
+
+  void Execute() {
     data_ = client_->FetchAll();
     if (!data_) {
       std::string msg("Failed to fetch all data.");
@@ -216,22 +285,12 @@ class AsyncExecuteWorker final : public Napi::AsyncWorker {
  private:
   Napi::Promise::Deferred deferred_;
   mg::Client *client_;
-  std::string query_;
   decltype(client_->FetchAll()) data_;
 };
 
-Napi::Value AsyncConnection::Execute(const Napi::CallbackInfo &info) {
+Napi::Value AsyncConnection::FetchAll(const Napi::CallbackInfo &info) {
   Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
-
-  if (info.Length() != 1 || !info[0].IsString()) {
-    Napi::TypeError::New(info.Env(), NODEMG_MSG_EXEC_QUERY_STRING_ERROR)
-        .ThrowAsJavaScriptException();
-    return info.Env().Undefined();
-    ;
-  }
-  std::string query = info[0].ToString().Utf8Value();
-
-  auto wk = new AsyncExecuteWorker(deferred, client_.get(), std::move(query));
+  auto wk = new AsyncFetchAllWorker(deferred, client_.get());
   wk->Queue();
   return deferred.Promise();
 }
