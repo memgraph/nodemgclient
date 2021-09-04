@@ -25,6 +25,7 @@ const memgraph = require('../lib');
         })
         .then(async (_) => {
           try {
+            await connection.DiscardAll();
             let data = await connection.FetchAll();
             console.log(data);
             data = await connection.FetchOne();

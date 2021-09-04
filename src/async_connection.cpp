@@ -25,14 +25,15 @@ Napi::FunctionReference AsyncConnection::constructor;
 Napi::Object AsyncConnection::Init(Napi::Env env, Napi::Object exports) {
   Napi::HandleScope scope(env);
 
-  Napi::Function func =
-      DefineClass(env, "Connection",
-                  {
-                      InstanceMethod("Connect", &AsyncConnection::Connect),
-                      InstanceMethod("Execute", &AsyncConnection::Execute),
-                      InstanceMethod("FetchAll", &AsyncConnection::FetchAll),
-                      InstanceMethod("FetchOne", &AsyncConnection::FetchOne),
-                  });
+  Napi::Function func = DefineClass(
+      env, "Connection",
+      {
+          InstanceMethod("Connect", &AsyncConnection::Connect),
+          InstanceMethod("Execute", &AsyncConnection::Execute),
+          InstanceMethod("FetchAll", &AsyncConnection::FetchAll),
+          InstanceMethod("DiscardAll", &AsyncConnection::DiscardAll),
+          InstanceMethod("FetchOne", &AsyncConnection::FetchOne),
+      });
 
   constructor = Napi::Persistent(func);
   constructor.SuppressDestruct();
@@ -299,6 +300,50 @@ class AsyncFetchAllWorker final : public Napi::AsyncWorker {
 Napi::Value AsyncConnection::FetchAll(const Napi::CallbackInfo &info) {
   Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
   auto wk = new AsyncFetchAllWorker(deferred, client_.get());
+  wk->Queue();
+  return deferred.Promise();
+}
+
+class AsyncDiscardAllWorker final : public Napi::AsyncWorker {
+ public:
+  AsyncDiscardAllWorker(const Napi::Promise::Deferred &deferred,
+                        mg::Client *client)
+      : AsyncWorker(Napi::Function::New(deferred.Promise().Env(),
+                                        [](const Napi::CallbackInfo &) {})),
+        deferred_(deferred),
+        client_(client) {}
+  ~AsyncDiscardAllWorker() = default;
+
+  void Execute() {
+    try {
+      client_->DiscardAll();
+    } catch (const std::exception &error) {
+      std::string msg =
+          std::string("Failed to fetch one data. ") + std::string(error.what());
+      SetError(msg);
+      return;
+    }
+  }
+
+  void OnOK() {
+    auto env = deferred_.Env();
+    // TODO(gibuda): Figure out the return value on DiscardAll.
+    this->deferred_.Resolve(env.Null());
+  }
+
+  void OnError(const Napi::Error &e) {
+    this->deferred_.Reject(Napi::Error::New(Env(), e.Message()).Value());
+  }
+
+ private:
+  Napi::Promise::Deferred deferred_;
+  mg::Client *client_;
+  decltype(client_->FetchAll()) data_;
+};
+
+Napi::Value AsyncConnection::DiscardAll(const Napi::CallbackInfo &info) {
+  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
+  auto wk = new AsyncDiscardAllWorker(deferred, client_.get());
   wk->Queue();
   return deferred.Promise();
 }
