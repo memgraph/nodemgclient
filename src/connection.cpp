@@ -86,7 +86,7 @@ Connection::Connection(const Napi::CallbackInfo &info)
   const char *mg_username = NULL;
   const char *mg_password = NULL;
   const char *mg_client_name = NULL;
-  enum mg_sslmode mg_ssl_mode = MG_SSLMODE_REQUIRE;
+  enum mg_sslmode mg_ssl_mode = MG_SSLMODE_DISABLE;
   const char *mg_ssl_cert = NULL;
   const char *mg_ssl_key = NULL;
   std::unique_ptr<TrustData> mg_trust_data;
