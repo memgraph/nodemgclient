@@ -17,16 +17,27 @@ const assert = require('assert');
 
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
-async function checkAgainstMemgraph(check, port = 7687) {
+async function checkAgainstMemgraph(check, port = 7687, sslEnabled = false) {
+  const cmd = [
+    '--telemetry-enabled=False',
+    '--log-level=TRACE',
+    '--also-log-to-stderr',
+  ];
+  if (sslEnabled) {
+    cmd.push(
+      '--bolt-key-file=/etc/memgraph/ssl/key.pem',
+      '--bolt-cert-file=/etc/memgraph/ssl/cert.pem',
+    );
+  }
   const container = await docker.createContainer({
-    Image: 'memgraph:1.1.0-community',
+    Image: 'memgraph:1.6.1-community',
     Tty: false,
     AttachStdin: false,
     AttachStdout: false,
     AttachStderr: false,
     OpenStdin: false,
     StdinOnce: false,
-    Cmd: ['--telemetry-enabled=False'],
+    Cmd: cmd,
     HostConfig: {
       AutoRemove: true,
       PortBindings: {
@@ -38,7 +49,7 @@ async function checkAgainstMemgraph(check, port = 7687) {
   // Waiting is not completly trivial because TCP connections is live while
   // Memgraph is still not up and running.
   // TODO(gitbuda): Replace wait with the client connection attempts.
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 2000));
   try {
     await check();
     // eslint-disable-next-line no-useless-catch
