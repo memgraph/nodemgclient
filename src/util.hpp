@@ -12,15 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <cstdint>
-
-enum class ConnectionStatus : std::int8_t {
-  Ready = 0,
-  InTransaction = 1,
-  Executing = 2,
-  Fetching = 3,
-  Closed = 4,
-  Bad = -1
-};
+/// Throws Napi error in the Napi context.
+/// Created because it makes the code cleaner.
+/// NOTE: Assumes there is the env variable in the scope!
+#define NODEMG_THROW(error) (NAPI_THROW(Napi::Error::New(env, error), ...))

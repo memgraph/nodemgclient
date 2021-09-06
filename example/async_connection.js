@@ -12,36 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const memgraph = require('../lib');
+const memgraph = require('..');
 
 (async () => {
   try {
-    const connection = memgraph.AsyncConnection();
-    connection.Connect({ host: 'localhost', port: 7687 }).then((connection) => {
-      console.log('Connected!');
-      connection
-        .Execute('MATCH (n) WHERE n.name = $name RETURN n, n.name;', {
-          name: 'TEST1',
-        })
-        .then(async (_) => {
-          try {
-            await connection.DiscardAll();
-            let data = await connection.FetchAll();
-            console.log(data);
-            data = await connection.FetchOne();
-            console.log(data);
-            data = await connection.FetchOne();
-            console.log(data);
-          } catch (e) {
+    const client = memgraph.Client();
+    client
+      .Connect({ host: 'localhost' })
+      .then(async (connection) => {
+        console.log('Connected!');
+        connection
+          .Execute('MATCH (n) WHERE n.name = $name RETURN n, n.name;', {
+            name: 'TEST1',
+          })
+          .then(async (_) => {
+            try {
+              await connection.DiscardAll();
+              let data = await connection.FetchAll();
+              console.log(data);
+              data = await connection.FetchOne();
+              console.log(data);
+              data = await connection.FetchOne();
+              console.log(data);
+            } catch (e) {
+              console.log(e);
+            }
+          })
+          .catch((e) => {
             console.log(e);
-          }
-        });
-    });
+          });
+      })
+      .catch((e) => {
+        console.log(e);
+      });
     console.log('Connecting...');
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const txConn = await memgraph
-      .AsyncConnection()
+      .Client()
       .Connect({ host: 'localhost', port: 7687 });
     await txConn.Begin();
     await txConn.Execute('CREATE (), ();');

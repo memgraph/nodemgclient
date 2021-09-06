@@ -12,111 +12,202 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "async_connection.hpp"
+#include "client.hpp"
 
 #include <cassert>
 
 #include "glue.hpp"
-#include "message.hpp"
 #include "mgclient.hpp"
+#include "util.hpp"
 
-Napi::FunctionReference AsyncConnection::constructor;
+namespace nodemg {
 
-Napi::Object AsyncConnection::Init(Napi::Env env, Napi::Object exports) {
+static const std::string CFG_HOST = "host";
+static const std::string CFG_PORT = "port";
+static const std::string CFG_USERNAME = "username";
+static const std::string CFG_PASSWORD = "password";
+static const std::string CFG_CLIENT_NAME = "client_name";
+static const std::string CFG_USE_SSL = "use_ssl";
+
+Napi::FunctionReference Client::constructor;
+
+Napi::Object Client::Init(Napi::Env env, Napi::Object exports) {
   Napi::HandleScope scope(env);
 
-  Napi::Function func = DefineClass(
-      env, "Connection",
-      {
-          InstanceMethod("Connect", &AsyncConnection::Connect),
-          InstanceMethod("Execute", &AsyncConnection::Execute),
-          InstanceMethod("FetchAll", &AsyncConnection::FetchAll),
-          InstanceMethod("DiscardAll", &AsyncConnection::DiscardAll),
-          InstanceMethod("FetchOne", &AsyncConnection::FetchOne),
-          InstanceMethod("Begin", &AsyncConnection::Begin),
-          InstanceMethod("Commit", &AsyncConnection::Commit),
-          InstanceMethod("Rollback", &AsyncConnection::Rollback),
-      });
+  Napi::Function func =
+      DefineClass(env, "Client",
+                  {
+                      InstanceMethod("Connect", &Client::Connect),
+                      InstanceMethod("Execute", &Client::Execute),
+                      InstanceMethod("FetchAll", &Client::FetchAll),
+                      InstanceMethod("DiscardAll", &Client::DiscardAll),
+                      InstanceMethod("FetchOne", &Client::FetchOne),
+                      InstanceMethod("Begin", &Client::Begin),
+                      InstanceMethod("Commit", &Client::Commit),
+                      InstanceMethod("Rollback", &Client::Rollback),
+                  });
 
   constructor = Napi::Persistent(func);
   constructor.SuppressDestruct();
 
-  exports.Set("Connection", func);
+  exports.Set("Client", func);
   return exports;
 }
 
-Napi::Object AsyncConnection::NewInstance(const Napi::CallbackInfo &info) {
+Napi::Object Client::NewInstance(const Napi::CallbackInfo &info) {
   Napi::EscapableHandleScope scope(info.Env());
   Napi::Object obj = constructor.New({info[0]});
   return scope.Escape(napi_value(obj)).ToObject();
 }
 
-std::optional<mg::Client::Params> AsyncConnection::CreateParams(
+std::optional<mg::Client::Params> Client::PrepareConnect(
     const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
-  if (info.Length() < 1 || !info[0].IsObject()) {
-    Napi::TypeError::New(env, NODEMG_MSG_CONN_WRONG_ARG)
-        .ThrowAsJavaScriptException();
+
+  mg::Client::Params mg_params;
+  mg_params.user_agent = name_;
+
+  if (info.Length() < 1) {
+    return mg_params;
+  }
+
+  static const std::string NODEMG_MSG_WRONG_CONNECT_ARG =
+      "Wrong connect argument. An object containing { host, port, username, "
+      "password, client_name, use_ssl } is required. All arguments are "
+      "optional.";
+  if (!info[0].IsObject()) {
+    NODEMG_THROW(NODEMG_MSG_WRONG_CONNECT_ARG);
     return std::nullopt;
   }
 
   Napi::Object user_params = info[0].As<Napi::Object>();
-  mg::Client::Params mg_params;
+  // Used to report an error if user misspelled any argument.
+  uint32_t counter = 0;
 
-  auto napi_host_value = user_params.Get("host");
-  if (!napi_host_value.IsUndefined()) {
-    mg_params.host = napi_host_value.ToString().Utf8Value();
+  if (user_params.Has(CFG_HOST)) {
+    counter++;
+    auto napi_host = user_params.Get(CFG_HOST);
+    if (!napi_host.IsString()) {
+      NODEMG_THROW("`host` connect argument has to be string.");
+      return std::nullopt;
+    }
+    mg_params.host = napi_host.ToString().Utf8Value();
   }
 
-  auto napi_port_value = user_params.Get("port");
-  if (!napi_port_value.IsUndefined()) {
-    auto port = napi_port_value.ToNumber().Uint32Value();
+  if (user_params.Has(CFG_PORT)) {
+    counter++;
+    auto napi_port = user_params.Get(CFG_PORT);
+    if (!napi_port.IsNumber()) {
+      NODEMG_THROW("`port` connect argument has to be number.");
+      return std::nullopt;
+    }
+    auto port = napi_port.ToNumber().Uint32Value();
     if (port > std::numeric_limits<decltype(mg_params.port)>::max()) {
-      Napi::TypeError::New(env, NODEMG_MSG_CONN_PORT_OUT_OF_RANGE)
-          .ThrowAsJavaScriptException();
+      NODEMG_THROW(
+          "`port` connect argument out of range. Port has to be a number "
+          "between 0 and 65535.");
       return std::nullopt;
     }
     mg_params.port = static_cast<decltype(mg_params.port)>(port);
   }
 
-  auto napi_username_value = user_params.Get("username");
-  if (!napi_username_value.IsUndefined()) {
-    mg_params.username = napi_username_value.ToString().Utf8Value();
+  if (user_params.Has(CFG_USERNAME)) {
+    counter++;
+    auto napi_username = user_params.Get(CFG_USERNAME);
+    if (!napi_username.IsString()) {
+      NODEMG_THROW("`username` connect argument has to be string.");
+      return std::nullopt;
+    }
+    mg_params.username = napi_username.ToString().Utf8Value();
   }
 
-  auto napi_password_value = user_params.Get("password");
-  if (!napi_password_value.IsUndefined()) {
-    mg_params.password = napi_password_value.ToString().Utf8Value();
+  if (user_params.Has(CFG_PASSWORD)) {
+    counter++;
+    auto napi_password = user_params.Get(CFG_PASSWORD);
+    if (!napi_password.IsString()) {
+      NODEMG_THROW("`password` connect argument has to be string.");
+      return std::nullopt;
+    }
+    mg_params.username = napi_password.ToString().Utf8Value();
   }
 
-  auto napi_client_name_value = user_params.Get("client_name");
-  if (!napi_client_name_value.IsUndefined()) {
-    mg_params.user_agent = napi_client_name_value.ToString().Utf8Value();
+  if (user_params.Has(CFG_CLIENT_NAME)) {
+    counter++;
+    auto napi_client_name = user_params.Get(CFG_CLIENT_NAME);
+    if (!napi_client_name.IsString()) {
+      NODEMG_THROW("`client_name` connect argument has to be string.");
+    }
+    mg_params.user_agent = napi_client_name.ToString().Utf8Value();
   }
-  { mg_params.user_agent = "nodemgclient/" + version_; }
 
-  auto napi_use_ssl_value = user_params.Get("use_ssl");
-  if (!napi_use_ssl_value.IsUndefined()) {
-    if (napi_use_ssl_value.ToBoolean()) {
+  if (user_params.Has(CFG_USE_SSL)) {
+    counter++;
+    auto napi_use_ssl = user_params.Get("use_ssl");
+    if (!napi_use_ssl.IsBoolean()) {
+      NODEMG_THROW("`use_ssl` connect argument has to be boolean.");
+      return std::nullopt;
+    }
+    if (napi_use_ssl.ToBoolean()) {
       mg_params.use_ssl = MG_SSLMODE_REQUIRE;
     } else {
       mg_params.use_ssl = MG_SSLMODE_DISABLE;
     }
   }
 
+  if (user_params.GetPropertyNames().Length() != counter) {
+    NODEMG_THROW(NODEMG_MSG_WRONG_CONNECT_ARG);
+    return std::nullopt;
+  }
+
   return mg_params;
 }
 
-AsyncConnection::AsyncConnection(const Napi::CallbackInfo &info)
-    : Napi::ObjectWrap<AsyncConnection>(info), client_(nullptr), version_("") {
+std::optional<std::pair<std::string, mg::ConstMap>> Client::PrepareQuery(
+    const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+
+  std::string query;
+  mg_map *query_params = NULL;
+
+  if (info.Length() == 1 || info.Length() == 2) {
+    auto maybe_query = info[0];
+    if (!maybe_query.IsString()) {
+      NODEMG_THROW("The first execute argument has to be string.");
+      return std::nullopt;
+    }
+    query = maybe_query.As<Napi::String>().Utf8Value();
+  }
+
+  if (info.Length() == 2) {
+    auto maybe_params = info[1];
+    if (!maybe_params.IsObject()) {
+      NODEMG_THROW(
+          "The second execute argument has to be an object containing query "
+          "parameters.");
+      return std::nullopt;
+    }
+    auto params = maybe_params.As<Napi::Object>();
+    auto maybe_mg_params = NapiObjectToMgMap(env, params);
+    if (!maybe_mg_params) {
+      NODEMG_THROW("Unable to create query parameters object.");
+      return std::nullopt;
+    }
+    query_params = *maybe_mg_params;
+  }
+
+  return std::make_pair(query, mg::ConstMap(query_params));
+}
+
+Client::Client(const Napi::CallbackInfo &info)
+    : Napi::ObjectWrap<Client>(info), client_(nullptr), name_("nodemgclient") {
   if (info.Length() == 1) {
-    version_ = info[0].As<Napi::String>().Utf8Value();
+    name_ = info[0].As<Napi::String>().Utf8Value();
   }
 }
 
-AsyncConnection::~AsyncConnection() {}
+Client::~Client() {}
 
-void AsyncConnection::SetClient(std::unique_ptr<mg::Client> client) {
+void Client::SetMgClient(std::unique_ptr<mg::Client> client) {
   this->client_ = std::move(client);
 }
 
@@ -131,18 +222,25 @@ class AsyncConnectWorker final : public Napi::AsyncWorker {
   ~AsyncConnectWorker() = default;
 
   void Execute() {
-    client_ = mg::Client::Connect(params_);
-    if (!client_) {
-      std::string msg("Failed to async connect.");
-      SetError(msg);
+    static const std::string NODEMG_MSG_CONNECT_FAILED =
+        "Connect failed. Ensure Memgraph is running and Client is properly "
+        "configured.";
+    try {
+      client_ = mg::Client::Connect(params_);
+      if (!client_) {
+        SetError(NODEMG_MSG_CONNECT_FAILED);
+        return;
+      }
+    } catch (const std::exception &error) {
+      SetError(NODEMG_MSG_CONNECT_FAILED + " " + error.what());
       return;
     }
   }
 
   void OnOK() {
-    Napi::Object obj = AsyncConnection::constructor.New({});
-    AsyncConnection *async_connection = AsyncConnection::Unwrap(obj);
-    async_connection->SetClient(std::move(client_));
+    Napi::Object obj = Client::constructor.New({});
+    Client *async_connection = Client::Unwrap(obj);
+    async_connection->SetMgClient(std::move(client_));
     this->deferred_.Resolve(obj);
   }
 
@@ -156,15 +254,20 @@ class AsyncConnectWorker final : public Napi::AsyncWorker {
   std::unique_ptr<mg::Client> client_;
 };
 
-// TODO(gitbuda): Try to push AsyncConnection::Connect to constructor.
-Napi::Value AsyncConnection::Connect(const Napi::CallbackInfo &info) {
-  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
+Napi::Value Client::Connect(const Napi::CallbackInfo &info) {
+  auto env = info.Env();
 
-  auto params = CreateParams(info);
-  if (!params) {
-    return info.Env().Undefined();
+  if (client_) {
+    NODEMG_THROW("Already connected.");
+    return env.Undefined();
   }
 
+  auto params = PrepareConnect(info);
+  if (!params) {
+    return env.Undefined();
+  }
+
+  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
   AsyncConnectWorker *wk = new AsyncConnectWorker(deferred, std::move(*params));
   wk->Queue();
   return deferred.Promise();
@@ -183,10 +286,16 @@ class AsyncExecuteWorker final : public Napi::AsyncWorker {
   ~AsyncExecuteWorker() = default;
 
   void Execute() {
-    auto status = client_->Execute(query_, params_);
-    if (!status) {
-      std::string msg("Failed to async execute query.");
-      SetError(msg);
+    static const std::string NODEMG_MSG_EXECUTE_FAIL =
+        "Failed to execute a query.";
+    try {
+      auto status = client_->Execute(query_, params_);
+      if (!status) {
+        SetError(NODEMG_MSG_EXECUTE_FAIL);
+        return;
+      }
+    } catch (const std::exception &error) {
+      SetError(NODEMG_MSG_EXECUTE_FAIL + " " + error.what());
       return;
     }
   }
@@ -207,40 +316,18 @@ class AsyncExecuteWorker final : public Napi::AsyncWorker {
   mg::ConstMap params_;
 };
 
-Napi::Value AsyncConnection::Execute(const Napi::CallbackInfo &info) {
+Napi::Value Client::Execute(const Napi::CallbackInfo &info) {
   auto env = info.Env();
+
+  auto query_params = PrepareQuery(info);
+  if (!query_params) {
+    return info.Env().Undefined();
+  }
+
   Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(env);
-
-  std::string query;
-  mg_map *mg_params = NULL;
-  if (info.Length() == 1 || info.Length() == 2) {
-    auto maybe_query = info[0];
-    if (!maybe_query.IsString()) {
-      Napi::Error::New(env, NODEMG_MSG_EXEC_QUERY_STRING_ERROR)
-          .ThrowAsJavaScriptException();
-      return env.Null();
-    }
-    query = maybe_query.As<Napi::String>().Utf8Value();
-  }
-  if (info.Length() == 2) {
-    auto maybe_params = info[1];
-    if (!maybe_params.IsObject()) {
-      Napi::Error::New(env, NODEMG_MSG_EXEC_QUERY_PARAMS_ERROR)
-          .ThrowAsJavaScriptException();
-      return env.Null();
-    }
-    auto params = maybe_params.As<Napi::Object>();
-    auto maybe_mg_params = NapiObjectToMgMap(env, params);
-    if (!maybe_mg_params) {
-      Napi::Error::New(env, NODEMG_MSG_EXEC_CONSTRUCT_QUERY_PARAMS_FAIL)
-          .ThrowAsJavaScriptException();
-      return env.Null();
-    }
-    mg_params = *maybe_mg_params;
-  }
-
-  auto wk = new AsyncExecuteWorker(deferred, client_.get(), std::move(query),
-                                   mg::ConstMap(mg_params));
+  auto wk = new AsyncExecuteWorker(deferred, client_.get(),
+                                   std::move(query_params->first),
+                                   std::move(query_params->second));
   wk->Queue();
   return deferred.Promise();
 }
@@ -256,12 +343,12 @@ class AsyncFetchAllWorker final : public Napi::AsyncWorker {
   ~AsyncFetchAllWorker() = default;
 
   void Execute() {
+    static const std::string NODEMG_MSG_FETCH_ONE_FAIL =
+        "Failed to fetch one record.";
     try {
       data_ = client_->FetchAll();
     } catch (const std::exception &error) {
-      std::string msg =
-          std::string("Failed to fetch one data. ") + std::string(error.what());
-      SetError(msg);
+      SetError(NODEMG_MSG_FETCH_ONE_FAIL + error.what());
       return;
     }
   }
@@ -283,8 +370,7 @@ class AsyncFetchAllWorker final : public Napi::AsyncWorker {
            ++inner_index) {
         auto value = MgValueToNapiValue(env, inner_array[inner_index].ptr());
         if (!value) {
-          std::string msg("Failed to convert fetched data.");
-          SetError(msg);
+          SetError("Failed to convert fetched data.");
           return;
         }
         inner_array_value[inner_index] = *value;
@@ -305,7 +391,7 @@ class AsyncFetchAllWorker final : public Napi::AsyncWorker {
   decltype(client_->FetchAll()) data_;
 };
 
-Napi::Value AsyncConnection::FetchAll(const Napi::CallbackInfo &info) {
+Napi::Value Client::FetchAll(const Napi::CallbackInfo &info) {
   Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
   auto wk = new AsyncFetchAllWorker(deferred, client_.get());
   wk->Queue();
@@ -323,19 +409,18 @@ class AsyncDiscardAllWorker final : public Napi::AsyncWorker {
   ~AsyncDiscardAllWorker() = default;
 
   void Execute() {
+    static const std::string NODEMG_MSG_DISCARD_ALL_FAIL =
+        "Failed to discard all data.";
     try {
       client_->DiscardAll();
     } catch (const std::exception &error) {
-      std::string msg =
-          std::string("Failed to discard data. ") + std::string(error.what());
-      SetError(msg);
+      SetError(NODEMG_MSG_DISCARD_ALL_FAIL + error.what());
       return;
     }
   }
 
   void OnOK() {
     auto env = deferred_.Env();
-    // TODO(gibuda): Figure out the return value on DiscardAll.
     this->deferred_.Resolve(env.Null());
   }
 
@@ -348,7 +433,7 @@ class AsyncDiscardAllWorker final : public Napi::AsyncWorker {
   mg::Client *client_;
 };
 
-Napi::Value AsyncConnection::DiscardAll(const Napi::CallbackInfo &info) {
+Napi::Value Client::DiscardAll(const Napi::CallbackInfo &info) {
   Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
   auto wk = new AsyncDiscardAllWorker(deferred, client_.get());
   wk->Queue();
@@ -366,12 +451,12 @@ class AsyncFetchOneWorker final : public Napi::AsyncWorker {
   ~AsyncFetchOneWorker() = default;
 
   void Execute() {
+    static const std::string NODEMG_MSG_FETCH_ONE_FAIL =
+        "Failed to fetch one record.";
     try {
       data_ = client_->FetchOne();
     } catch (const std::exception &error) {
-      std::string msg =
-          std::string("Failed to fetch one data. ") + std::string(error.what());
-      SetError(msg);
+      SetError(NODEMG_MSG_FETCH_ONE_FAIL + error.what());
       return;
     }
   }
@@ -388,8 +473,7 @@ class AsyncFetchOneWorker final : public Napi::AsyncWorker {
     for (uint32_t index = 0; index < data_->size(); ++index) {
       auto value = MgValueToNapiValue(env, (*data_)[index].ptr());
       if (!value) {
-        std::string msg("Failed to convert fetched data.");
-        SetError(msg);
+        SetError("Failed to convert fetched data.");
         return;
       }
       array_value[index] = *value;
@@ -408,7 +492,7 @@ class AsyncFetchOneWorker final : public Napi::AsyncWorker {
   decltype(client_->FetchOne()) data_;
 };
 
-Napi::Value AsyncConnection::FetchOne(const Napi::CallbackInfo &info) {
+Napi::Value Client::FetchOne(const Napi::CallbackInfo &info) {
   Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
   auto wk = new AsyncFetchOneWorker(deferred, client_.get());
   wk->Queue();
@@ -418,7 +502,7 @@ Napi::Value AsyncConnection::FetchOne(const Napi::CallbackInfo &info) {
 class AsyncTxOpWoker final : public Napi::AsyncWorker {
  public:
   AsyncTxOpWoker(const Napi::Promise::Deferred &deferred, mg::Client *client,
-                 AsyncConnection::TxOp tx_op)
+                 Client::TxOp tx_op)
       : AsyncWorker(Napi::Function::New(deferred.Promise().Env(),
                                         [](const Napi::CallbackInfo &) {})),
         deferred_(deferred),
@@ -429,48 +513,43 @@ class AsyncTxOpWoker final : public Napi::AsyncWorker {
   void Execute() {
     try {
       switch (tx_op_) {
-        case AsyncConnection::TxOp::Begin: {
+        case Client::TxOp::Begin: {
           auto status = client_->BeginTransaction();
           if (!status) {
-            std::string msg("Failed to BEGIN transaction.");
-            SetError(msg);
+            SetError("Fail to BEGIN transaction.");
             return;
           }
           break;
         }
-        case AsyncConnection::TxOp::Commit: {
+        case Client::TxOp::Commit: {
           auto status = client_->CommitTransaction();
           if (!status) {
-            std::string msg("Failed to COMMIT transaction.");
-            SetError(msg);
+            SetError("Fail to COMMIT transaction.");
             return;
           }
           break;
         }
-        case AsyncConnection::TxOp::Rollback: {
+        case Client::TxOp::Rollback: {
           auto status = client_->RollbackTransaction();
           if (!status) {
-            std::string msg("Failed to ROLLBACK transaction.");
-            SetError(msg);
+            SetError("Fail to ROLLBACK transaction.");
             return;
           }
           break;
         }
         default:
-          throw std::runtime_error("Wrong transaction operation");
+          throw std::runtime_error("Wrong transaction operation.");
       }
     } catch (const std::exception &error) {
-      std::string msg =
-          std::string("Failed to execute transaction operation.") +
-          std::string(error.what());
-      SetError(msg);
+      static const std::string NODEMG_MSG_TXOP_FAIL =
+          "Fail to execute transaction operation.";
+      SetError(NODEMG_MSG_TXOP_FAIL + " " + error.what());
       return;
     }
   }
 
   void OnOK() {
     auto env = deferred_.Env();
-    // TODO(gibuda): Figure out the return value on Begin/Commit/Rollback.
     this->deferred_.Resolve(env.Null());
   }
 
@@ -481,29 +560,28 @@ class AsyncTxOpWoker final : public Napi::AsyncWorker {
  private:
   Napi::Promise::Deferred deferred_;
   mg::Client *client_;
-  AsyncConnection::TxOp tx_op_;
+  Client::TxOp tx_op_;
 };
 
-Napi::Value AsyncConnection::Begin(const Napi::CallbackInfo &info) {
+Napi::Value Client::Begin(const Napi::CallbackInfo &info) {
   Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
-  auto wk =
-      new AsyncTxOpWoker(deferred, client_.get(), AsyncConnection::TxOp::Begin);
+  auto wk = new AsyncTxOpWoker(deferred, client_.get(), Client::TxOp::Begin);
   wk->Queue();
   return deferred.Promise();
 }
 
-Napi::Value AsyncConnection::Commit(const Napi::CallbackInfo &info) {
+Napi::Value Client::Commit(const Napi::CallbackInfo &info) {
   Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
-  auto wk = new AsyncTxOpWoker(deferred, client_.get(),
-                               AsyncConnection::TxOp::Commit);
+  auto wk = new AsyncTxOpWoker(deferred, client_.get(), Client::TxOp::Commit);
   wk->Queue();
   return deferred.Promise();
 }
 
-Napi::Value AsyncConnection::Rollback(const Napi::CallbackInfo &info) {
+Napi::Value Client::Rollback(const Napi::CallbackInfo &info) {
   Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
-  auto wk = new AsyncTxOpWoker(deferred, client_.get(),
-                               AsyncConnection::TxOp::Rollback);
+  auto wk = new AsyncTxOpWoker(deferred, client_.get(), Client::TxOp::Rollback);
   wk->Queue();
   return deferred.Promise();
 }
+
+}  // namespace nodemg

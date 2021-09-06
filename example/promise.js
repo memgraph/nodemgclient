@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const memgraph = require('../lib');
+const memgraph = require('..');
 const query = require('../test/queries');
 
 (async () => {
   try {
-    // TODO(gitbuda): Design the correct interface. Connect should also return
-    // a promise.
-    const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
+    const connection = await memgraph.Connect({
+      host: 'localhost',
+      port: 7687,
+    });
 
-    await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
+    await connection.ExecuteAndFetchAll(query.DELETE_ALL);
 
-    const result = await connection.ExecuteAndFetchRecords(
+    const result = await connection.ExecuteAndFetchAll(
       `RETURN "value_x2" AS x, "value_y2" AS y;`,
     );
-    console.log(result['data'][0].Values());
+    console.log(result);
 
-    await connection.ExecuteAndFetchRecords('FAIL');
+    await connection.ExecuteAndFetchAll('FAIL');
   } catch (e) {
     console.log(e);
   }

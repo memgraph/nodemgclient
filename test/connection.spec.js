@@ -14,39 +14,39 @@
 
 const getPort = require('get-port');
 
-const memgraph = require('../lib');
+const memgraph = require('..');
 const util = require('./util');
 
-// TODO(gitbuda): Add all connection params test.
+test('Connect empty args should work (port is always different)', async () => {
+  const port = await getPort();
+  await util.checkAgainstMemgraph(async () => {
+    const connection = await memgraph.Client().Connect({ port: port });
+    expect(connection).toBeDefined();
+  }, port);
+});
 
-test('Fail because connection params are not there', () => {
+test('Connect fail because port spelling is wrong', () => {
   expect(() => {
-    memgraph.Connect();
+    memgraph.Client().Connect({ prt: 7687 });
   }).toThrow();
 });
 
-test('Fail because both host and address are missing', () => {
+test('Connect fail because port is out of range', () => {
   expect(() => {
-    memgraph.Connect({ port: 7687, use_ssl: true });
-  }).toThrow();
-});
-
-test('Fail because port number is out of range', () => {
-  expect(() => {
-    memgraph.Connect({ host: 'localhost', port: -100, use_ssl: true });
+    memgraph.Client().Connect({ port: -100 });
   }).toThrow();
   expect(() => {
-    memgraph.Connect({ host: 'localhost', port: 10000, use_ssl: true });
+    memgraph.Client().Connect({ port: 1000000 });
   }).toThrow();
 });
 
 test('Connect to Memgraph host via SSL multiple times', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(
-    () => {
+    async () => {
       for (let iter = 0; iter < 100; iter++) {
-        const connection = memgraph.Connect({
-          address: '127.0.0.1',
+        const connection = await memgraph.Client().Connect({
+          host: '127.0.0.1',
           port: port,
           use_ssl: true,
         });
@@ -58,94 +58,11 @@ test('Connect to Memgraph host via SSL multiple times', async () => {
   );
 });
 
-test('Connect to Memgraph address via SSL', async () => {
+test('Connect fail because host is wrong', async () => {
   const port = await getPort();
-  await util.checkAgainstMemgraph(
-    () => {
-      const connection = memgraph.Connect({
-        address: '127.0.0.1',
-        port: port,
-        use_ssl: true,
-      });
-      expect(connection).toBeDefined();
-    },
-    port,
-    true,
-  );
-});
-
-test('Fail because trust_callback is not callable', async () => {
-  const port = await getPort();
-  await util.checkAgainstMemgraph(
-    () => {
-      expect(() => {
-        memgraph.Connect({
-          address: '127.0.0.1',
-          port: port,
-          use_ssl: true,
-          trust_callback: 'Not callable.',
-        });
-      }).toThrow();
-    },
-    port,
-    true,
-  );
-});
-
-test('Fail because trust_callback returns false', async () => {
-  const port = await getPort();
-  await util.checkAgainstMemgraph(
-    () => {
-      expect(() => {
-        memgraph.Connect({
-          address: '127.0.0.1',
-          port: port,
-          use_ssl: true,
-          trust_callback: () => {
-            return false;
-          },
-        });
-      }).toThrow();
-    },
-    port,
-    true,
-  );
-});
-
-test('trust_callback when returns true', async () => {
-  const port = await getPort();
-  await util.checkAgainstMemgraph(
-    () => {
-      const connection = memgraph.Connect({
-        address: '127.0.0.1',
-        port: port,
-        use_ssl: true,
-        trust_callback: () => {
-          return true;
-        },
-      });
-      expect(connection).toBeDefined();
-    },
-    port,
-    true,
-  );
-});
-
-test('trust callback received all arguments', async () => {
-  const port = await getPort();
-  await util.checkAgainstMemgraph(
-    () => {
-      const connection = memgraph.Connect({
-        address: '127.0.0.1',
-        port: port,
-        use_ssl: true,
-        trust_callback: () => {
-          return true;
-        },
-      });
-      expect(connection).toBeDefined();
-    },
-    port,
-    true,
-  );
+  await util.checkAgainstMemgraph(async () => {
+    await expect(
+      memgraph.Client().Connect({ host: 'wrong_host' }),
+    ).rejects.toThrow();
+  }, port);
 });

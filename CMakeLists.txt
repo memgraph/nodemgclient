@@ -50,11 +50,8 @@ add_dependencies(${MGCLIENT_LIBRARY} mgclient-proj)
 # Define the addon.
 include_directories(${CMAKE_JS_INC})
 set(SOURCE_FILES src/addon.cpp
-                 src/async_connection.cpp
-                 src/connection.cpp
-                 src/glue.cpp
-                 src/record.cpp
-                 src/cursor.cpp)
+                 src/client.cpp
+                 src/glue.cpp)
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -62,6 +59,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
                       project_warnings project_options)
 target_include_directories(${PROJECT_NAME} PRIVATE ${MGCLIENT_INCLUDE_DIRS})
 # TODO(gitbuda): Make a decisions about CPP exceptions (mgclinet cpp throws).
+#                Document why enabled, how to handle and why we return optional.
+# If at any time we decide to disable exceptions with the combination of
+# NAPI_THROW + std::nullopt in case of an error, the code should work as is.
+# On promise ok, where there is not value, return null, otherwise set error
 target_compile_options(${PROJECT_NAME} PRIVATE "")
 add_definitions(-DNAPI_CPP_EXCEPTIONS)
 

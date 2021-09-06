@@ -14,7 +14,9 @@
 
 #include "glue.hpp"
 
-#include "message.hpp"
+#include "util.hpp"
+
+namespace nodemg {
 
 Napi::Value MgStringToNapiString(Napi::Env env, const mg_string *input_string) {
   Napi::EscapableHandleScope scope(env);
@@ -247,12 +249,11 @@ std::optional<Napi::Value> MgValueToNapiValue(Napi::Env env,
       return scope.Escape(napi_value(*path_value));
     }
     case MG_VALUE_TYPE_UNKNOWN:
-      Napi::Error::New(env, NODEMG_MSG_EXEC_UNKNOWN_TYPE_ERROR)
-          .ThrowAsJavaScriptException();
+      NODEMG_THROW(
+          "A value of unknown type encountered during query execution.");
       return std::nullopt;
     default:
-      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNRECOGNIZED_TYPE_ERROR)
-          .ThrowAsJavaScriptException();
+      NODEMG_THROW("Unrecognized type encountered during query execution.");
       return std::nullopt;
   }
 }
@@ -263,23 +264,19 @@ std::optional<mg_list *> NapiArrayToMgList(Napi::Env env,
   output_list = mg_list_make_empty(input_array.Length());
   if (!output_list) {
     mg_list_destroy(output_list);
-    Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_LIST)
-        .ThrowAsJavaScriptException();
+    NODEMG_THROW("Fail to construct Memgraph list.");
     return std::nullopt;
   }
   for (uint32_t index = 0; index < input_array.Length(); ++index) {
     auto maybe_value = NapiValueToMgValue(env, input_array[index]);
     if (!maybe_value) {
       mg_list_destroy(output_list);
-      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_VALUE)
-          .ThrowAsJavaScriptException();
+      NODEMG_THROW("Fail to construct Memgraph value while constructing list.");
       return std::nullopt;
     }
     if (mg_list_append(output_list, *maybe_value) != 0) {
       mg_list_destroy(output_list);
-      Napi::TypeError::New(env,
-                           NODEMG_MSG_EXEC_UNABLE_TO_APPEND_VALUE_TO_MG_LIST)
-          .ThrowAsJavaScriptException();
+      NODEMG_THROW("Fail to append Memgraph list value.");
       return std::nullopt;
     }
   }
@@ -298,9 +295,7 @@ std::optional<mg_value *> NapiValueToMgValue(Napi::Env env,
     bool lossless;
     int64_t as_int64 = input_value.As<Napi::BigInt>().Int64Value(&lossless);
     if (!lossless) {
-      Napi::TypeError::New(env,
-                           NODEMG_MSG_EXEC_UNABLE_TO_LOSSLESSLY_CONVERT_INT)
-          .ThrowAsJavaScriptException();
+      NODEMG_THROW("Fail to losslessly convert value to Memgraph int64.");
       return std::nullopt;
     }
     output_value = mg_value_make_integer(as_int64);
@@ -311,35 +306,28 @@ std::optional<mg_value *> NapiValueToMgValue(Napi::Env env,
     mg_string *input_mg_string =
         mg_string_make(input_value.As<Napi::String>().Utf8Value().c_str());
     if (!input_mg_string) {
-      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_STRING)
-          .ThrowAsJavaScriptException();
+      NODEMG_THROW("Fail to construct Memgraph string.");
       return std::nullopt;
     }
     output_value = mg_value_make_string2(input_mg_string);
   } else if (input_value.IsArray()) {
     auto maybe_mg_list = NapiArrayToMgList(env, input_value.As<Napi::Array>());
     if (!maybe_mg_list) {
-      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_LIST)
-          .ThrowAsJavaScriptException();
       return std::nullopt;
     }
     output_value = mg_value_make_list(*maybe_mg_list);
   } else if (input_value.IsObject()) {
     auto maybe_mg_map = NapiObjectToMgMap(env, input_value.As<Napi::Object>());
     if (!maybe_mg_map) {
-      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_MAP)
-          .ThrowAsJavaScriptException();
       return std::nullopt;
     }
     output_value = mg_value_make_map(*maybe_mg_map);
   } else {
-    Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNRECOGNIZED_JS_VALUE)
-        .ThrowAsJavaScriptException();
+    NODEMG_THROW("Unrecognized JavaScript value.");
     return std::nullopt;
   }
   if (!output_value) {
-    Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_VALUE)
-        .ThrowAsJavaScriptException();
+    NODEMG_THROW("Fail to construct Memgraph value.");
     return std::nullopt;
   }
   return output_value;
@@ -352,8 +340,7 @@ std::optional<mg_map *> NapiObjectToMgMap(Napi::Env env,
   output_map = mg_map_make_empty(keys.Length());
   if (!output_map) {
     mg_map_destroy(output_map);
-    Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_MAP)
-        .ThrowAsJavaScriptException();
+    NODEMG_THROW("Fail to construct Memgraph map.");
     return std::nullopt;
   }
   for (uint32_t index = 0; index < keys.Length(); index++) {
@@ -362,23 +349,21 @@ std::optional<mg_map *> NapiObjectToMgMap(Napi::Env env,
         mg_string_make(napi_key.As<Napi::String>().Utf8Value().c_str());
     if (!mg_key) {
       mg_map_destroy(output_map);
-      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_STRING)
-          .ThrowAsJavaScriptException();
+      NODEMG_THROW("Fail to constract Memgraph string while creating map.");
       return std::nullopt;
     }
     auto maybe_mg_value = NapiValueToMgValue(env, input_object.Get(napi_key));
     if (!maybe_mg_value) {
       mg_map_destroy(output_map);
-      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_CONSTRUCT_MG_VALUE)
-          .ThrowAsJavaScriptException();
       return std::nullopt;
     }
     if (mg_map_insert_unsafe2(output_map, mg_key, *maybe_mg_value) != 0) {
       mg_map_destroy(output_map);
-      Napi::TypeError::New(env, NODEMG_MSG_EXEC_UNABLE_TO_ADD_TO_MG_MAP)
-          .ThrowAsJavaScriptException();
+      NODEMG_THROW("Fail to add value to Memgraph map.");
       return std::nullopt;
     }
   }
   return output_map;
 }
+
+}  // namespace nodemg

@@ -14,7 +14,7 @@
   "private": true,
   "author": "Marko Budiselic <marko.budiselic@memgraph.com>",
   "contributors": [],
-  "main": "lib/index.js",
+  "main": "index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/memgraph/nodemgclient.git"
@@ -31,6 +31,7 @@
     "bindings": "~1.2.1"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.15.4",
     "cmake-js": "^6.2.0",
     "dockerode": "^3.3.0",
     "eslint": "^7.32.0",

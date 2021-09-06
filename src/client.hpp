@@ -19,21 +19,20 @@
 // TODO(gitbuda): Ensure AsyncConnection can't be missused in the concurrent
 // environmnt (multiple threads calling the same object).
 
-class AsyncConnection final : public Napi::ObjectWrap<AsyncConnection> {
+namespace nodemg {
+
+class Client final : public Napi::ObjectWrap<Client> {
  public:
   static Napi::FunctionReference constructor;
   static Napi::Object Init(Napi::Env env, Napi::Object exports);
   static Napi::Object NewInstance(const Napi::CallbackInfo &info);
 
-  AsyncConnection(const Napi::CallbackInfo &info);
-  ~AsyncConnection();
-  void SetClient(std::unique_ptr<mg::Client> client);
+  Client(const Napi::CallbackInfo &info);
+  ~Client();
+  // Public because it's called from AsyncWorker.
+  void SetMgClient(std::unique_ptr<mg::Client> client);
 
-  enum class TxOp {
-    Begin,
-    Commit,
-    Rollback
-  };
+  enum class TxOp { Begin, Commit, Rollback };
 
   Napi::Value Connect(const Napi::CallbackInfo &info);
   Napi::Value Execute(const Napi::CallbackInfo &info);
@@ -46,7 +45,12 @@ class AsyncConnection final : public Napi::ObjectWrap<AsyncConnection> {
 
  private:
   std::unique_ptr<mg::Client> client_;
-  std::string version_;
+  std::string name_;
 
-  std::optional<mg::Client::Params> CreateParams(const Napi::CallbackInfo &info);
+  std::optional<mg::Client::Params> PrepareConnect(
+      const Napi::CallbackInfo &info);
+  std::optional<std::pair<std::string, mg::ConstMap>> PrepareQuery(
+      const Napi::CallbackInfo &info);
 };
+
+}  // namespace nodemg

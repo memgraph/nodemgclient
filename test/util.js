@@ -62,7 +62,7 @@ async function checkAgainstMemgraph(check, port = 7687, sslEnabled = false) {
 
 function firstRecord(result) {
   assert(!!result && typeof result === 'object', 'Result has to be Object');
-  const data = result['data'];
+  const data = result[0];
   assert(!!data && Array.isArray(data), 'Data has to be Array');
   assert(data.length > 0);
   return data[0];

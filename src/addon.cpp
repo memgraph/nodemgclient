@@ -14,35 +14,10 @@
 
 #include <napi.h>
 
-#include "async_connection.hpp"
-#include "connection.hpp"
-#include "cursor.hpp"
-#include "record.hpp"
+#include "client.hpp"
 
-Napi::Object CreateConnection(const Napi::CallbackInfo &info) {
-  return Connection::NewInstance(info);
-}
-
-Napi::Value CreateAsyncConnection(const Napi::CallbackInfo &info) {
-  return AsyncConnection::NewInstance(info);
-}
-
-Napi::Object InitAll(Napi::Env env, [[maybe_unused]] Napi::Object exports) {
-  Napi::Object all_exports = Napi::Object::New(env);
-
-  Napi::Object sync_exports =
-      Napi::Function::New(env, CreateConnection, "Connection");
-  Record::Init(env, sync_exports);
-  Cursor::Init(env, sync_exports);
-  Connection::Init(env, sync_exports);
-  all_exports.Set("Sync", sync_exports);
-
-  Napi::Object async_exports =
-      Napi::Function::New(env, CreateAsyncConnection, "Connection");
-  AsyncConnection::Init(env, async_exports);
-  all_exports.Set("Async", async_exports);
-
-  return all_exports;
+Napi::Object InitAll(Napi::Env env, Napi::Object exports) {
+  return nodemg::Client::Init(env, exports);
 }
 
 NODE_API_MODULE(addon, InitAll)

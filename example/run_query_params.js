@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const memgraph = require('../lib');
+const memgraph = require('..');
 
 (async () => {
   try {
-    const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
+    const connection = await memgraph.Connect({
+      host: 'localhost',
+      port: 7687,
+    });
 
-    await connection.ExecuteAndFetchRecords('CREATE (n:Node {name: $name});', {
+    await connection.ExecuteAndFetchAll('CREATE (n:Node {name: $name});', {
       name: 'John Swan',
     });
-    console.log(
-      (await connection.ExecuteAndFetchRecords('MATCH (n) RETURN n;'))[
-        'data'
-      ][0].Values()[0].properties,
-    );
+    console.log(await connection.ExecuteAndFetchAll('MATCH (n) RETURN n;'));
   } catch (e) {
     console.log(e);
   }
