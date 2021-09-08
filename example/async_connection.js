@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO(gitbuda): Make tests out of this async example.
+
 const memgraph = require('..');
 
 (async () => {
@@ -23,11 +25,15 @@ const memgraph = require('..');
         console.log('Connected!');
         connection
           .Execute('MATCH (n) WHERE n.name = $name RETURN n, n.name;', {
-            name: 'TEST1',
+            name: 'TEST',
           })
           .then(async (_) => {
             try {
-              await connection.DiscardAll();
+              try {
+                await connection.Execute('MATCH (n) RETURN n;');
+              } catch (e) {
+                console.log('The second MATCH should fail: ' + e);
+              }
               let data = await connection.FetchAll();
               console.log(data);
               data = await connection.FetchOne();
