@@ -15,9 +15,8 @@
 const Bindings = require('bindings')('nodemgclient');
 const pjson = require('./package.json');
 
-
 // This class exists becuase of additional logic that is easier to implement in
-  // JavaScript + to extend the implementation with easy to use primitives.
+// JavaScript + to extend the implementation with easy to use primitives.
 class Connection {
   constructor(client) {
     this.client = client;

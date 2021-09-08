@@ -31,7 +31,6 @@
     "bindings": "~1.2.1"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.15.4",
     "cmake-js": "^6.2.0",
     "dockerode": "^3.3.0",
     "eslint": "^7.32.0",
