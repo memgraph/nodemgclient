@@ -12,21 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Keep in mind structural subtyping
-// https://www.typescriptlang.org/docs/handbook/type-compatibility.html
-// Keep in mind node-addon-api context
-// https://stackoverflow.com/questions/44275172/typescript-declarations-file-for-node-c-addon
-
-export interface Connection {
-  constructor(params?: any): Connection;
-  Execute(query: string, params?: any): Promise<any>;
-  DiscardAll(): Promise<any>;
-  FetchAll(): Promise<any>;
-  FetchOne(): Promise<any>;
-  Begin(): Promise<any>;
-  Commit(): Promise<any>;
-  Rollback(): Promise<any>;
-  ExecuteAndFetchAll(query: string, params?: any): Promise<any>;
+export class Connection {
+    constructor(client: any);
+    client: any;
+    Execute(query: any, params?: {}): Promise<any>;
+    FetchAll(): Promise<any>;
+    DiscardAll(): Promise<any>;
+    Begin(): Promise<any>;
+    Commit(): Promise<any>;
+    Rollback(): Promise<any>;
+    ExecuteAndFetchAll(query: any, params?: {}): Promise<any>;
 }
-
-export function Connect(params?: any): Promise<any>;
+export namespace Memgraph {
+    export function Client_1(): any;
+    export { Client_1 as Client };
+    export function Connect_1(params: any): Promise<Connection>;
+    export { Connect_1 as Connect };
+}
+import Client = Memgraph.Client;
+import Connect = Memgraph.Connect;
+export { Memgraph as default, Client, Connect };

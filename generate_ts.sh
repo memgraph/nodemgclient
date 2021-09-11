@@ -1,3 +1,14 @@
+#!/bin/bash
+
+# Generates TypeScript declarations.
+
+set -Eeuo pipefail
+script_dir="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd)"
+
+cd "$script_dir"
+npx tsc index.js --declaration --allowJs --checkJs --resolveJsonModule --emitDeclarationOnly
+types=$(cat index.d.ts)
+cat << EOF > index.d.ts
 // Copyright (c) 2016-2021 Memgraph Ltd. [https://memgraph.com]
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,15 +23,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(gitbuda): Figure out how to use import xyz from abc;
-// TODO(gitbuda): Ignore generated js file.
-import Memgraph = require("../index");
-
-(async () => {
-  try {
-    const connection:Memgraph.Connection = await Memgraph.Connect({ host: 'localhost', port: 7687 });
-    connection.Execute("MATCH (n) RETURN n;");
-  } catch (e) {
-    console.log(e);
-  }
-})();
+EOF
+echo "$types" >> index.d.ts

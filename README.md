@@ -10,8 +10,8 @@
 
 ### Build from Source
 
- To install `nodemgclient` from sources you will need (only Linux is tested at
- the moment):
+To install `nodemgclient` from sources you will need (only Linux is tested at
+the moment):
 
 * OpenSSL >= 1.0.2
 * A CMake >= 3.10

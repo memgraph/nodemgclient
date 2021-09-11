@@ -64,4 +64,10 @@ const Memgraph = {
   }
 }
 
-module.exports = Memgraph;
+module.exports = {
+  Connection,
+  default: Memgraph,
+  Client: Memgraph.Client,
+  Connect: Memgraph.Connect,
+  Memgraph: Memgraph,
+}

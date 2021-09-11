@@ -17,7 +17,7 @@ const query = require('../test/queries');
 
 (async () => {
   try {
-    const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
+    const connection = await memgraph.Connect({ host: 'localhost', port: 7687 });
 
     await connection.ExecuteAndFetchAll(query.DELETE_ALL);
     await connection.ExecuteAndFetchAll(query.CREATE_TRIANGLE);
