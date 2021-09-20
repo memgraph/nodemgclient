@@ -26,6 +26,25 @@ Napi::Value MgStringToNapiString(Napi::Env env, const mg_string *input_string) {
   return scope.Escape(napi_value(output_string));
 }
 
+// TODO(gitbuda): Implement Memgraph temporal types to Napi date object.
+
+Napi::Value MgDateToNapiDate(Napi::Env env, const mg_date *) {
+  return env.Null();
+}
+
+Napi::Value MgLocalTimeToNapiLocalTime(Napi::Env env, const mg_local_time *) {
+  return env.Null();
+}
+
+Napi::Value MgLocalDateTimeToNapiLocalDateTime(Napi::Env env,
+                                               const mg_local_date_time *) {
+  return env.Null();
+}
+
+Napi::Value MgDurationToNapiDuration(Napi::Env env, const mg_duration *) {
+  return env.Null();
+}
+
 std::optional<Napi::Value> MgListToNapiArray(Napi::Env env,
                                              const mg_list *input_list) {
   Napi::EscapableHandleScope scope(env);
@@ -204,6 +223,18 @@ std::optional<Napi::Value> MgValueToNapiValue(Napi::Env env,
     case MG_VALUE_TYPE_STRING:
       return scope.Escape(
           napi_value(MgStringToNapiString(env, mg_value_string(input_value))));
+    case MG_VALUE_TYPE_DATE:
+      return scope.Escape(
+          napi_value(MgDateToNapiDate(env, mg_value_date(input_value))));
+    case MG_VALUE_TYPE_LOCAL_TIME:
+      return scope.Escape(napi_value(
+          MgLocalTimeToNapiLocalTime(env, mg_value_local_time(input_value))));
+    case MG_VALUE_TYPE_LOCAL_DATE_TIME:
+      return scope.Escape(napi_value(MgLocalDateTimeToNapiLocalDateTime(
+          env, mg_value_local_date_time(input_value))));
+    case MG_VALUE_TYPE_DURATION:
+      return scope.Escape(napi_value(
+          MgDurationToNapiDuration(env, mg_value_duration(input_value))));
     case MG_VALUE_TYPE_LIST: {
       auto list_value = MgListToNapiArray(env, mg_value_list(input_value));
       if (!list_value) {
@@ -310,6 +341,9 @@ std::optional<mg_value *> NapiValueToMgValue(Napi::Env env,
       return std::nullopt;
     }
     output_value = mg_value_make_string2(input_mg_string);
+  } else if (input_value.IsDate()) {
+    NODEMG_THROW("JS Date to Memgraph Date not yet implemented!");
+    return std::nullopt;
   } else if (input_value.IsArray()) {
     auto maybe_mg_list = NapiArrayToMgList(env, input_value.As<Napi::Array>());
     if (!maybe_mg_list) {
