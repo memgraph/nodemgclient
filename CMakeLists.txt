@@ -58,12 +58,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
                       ${CMAKE_JS_LIB} ${MGCLIENT_LIBRARY}
                       project_warnings project_options)
 target_include_directories(${PROJECT_NAME} PRIVATE ${MGCLIENT_INCLUDE_DIRS})
-# TODO(gitbuda): Make a decisions about CPP exceptions (mgclinet cpp throws).
-#                Document why enabled, how to handle and why we return optional.
-# If at any time we decide to disable exceptions with the combination of
-# NAPI_THROW + std::nullopt in case of an error, the code should work as is.
-# On promise ok, where there is not value, return null, otherwise set error
 target_compile_options(${PROJECT_NAME} PRIVATE "")
+# C++ mgclient throws, which means this project has to enable exceptions. If at
+# any time we decide to disable exceptions with the combination of NAPI_THROW +
+# std::nullopt in case of an error, the code should work as is.
 add_definitions(-DNAPI_CPP_EXCEPTIONS)
 
 # Include N-API wrappers.
