@@ -26,23 +26,49 @@ Napi::Value MgStringToNapiString(Napi::Env env, const mg_string *input_string) {
   return scope.Escape(napi_value(output_string));
 }
 
-// TODO(gitbuda): Implement Memgraph temporal types to Napi date object.
-
-Napi::Value MgDateToNapiDate(Napi::Env env, const mg_date *) {
-  return env.Null();
+Napi::Value MgDateToNapiDate(Napi::Env env, const mg_date *input) {
+  Napi::EscapableHandleScope scope(env);
+  auto days = mg_date_days(input);
+  auto milliseconds = days * 24 * 60 * 60 * 1000;
+  return scope.Escape(napi_value(Napi::Date::New(env, milliseconds)));
 }
 
-Napi::Value MgLocalTimeToNapiLocalTime(Napi::Env env, const mg_local_time *) {
-  return env.Null();
+Napi::Value MgLocalTimeToNapiLocalTime(Napi::Env env,
+                                       const mg_local_time *input) {
+  // An object suitable to store mg_local_time doesn't exist.
+  // TODO(gitbuda): Figure out how to transform mg_local_time.
+  Napi::EscapableHandleScope scope(env);
+  auto nanoseconds = mg_local_time_nanoseconds(input);
+  Napi::Object output = Napi::Object::New(env);
+  output.Set("type", "mglocaltime");
+  output.Set("nanoseconds", Napi::BigInt::New(env, nanoseconds));
+  return scope.Escape(napi_value(output));
 }
 
-Napi::Value MgLocalDateTimeToNapiLocalDateTime(Napi::Env env,
-                                               const mg_local_date_time *) {
-  return env.Null();
+Napi::Value MgLocalDateTimeToNapiDate(Napi::Env env,
+                                      const mg_local_date_time *input) {
+  Napi::EscapableHandleScope scope(env);
+  auto seconds = mg_local_date_time_seconds(input);
+  auto nanoseconds = mg_local_date_time_nanoseconds(input);
+  // NOTE: An obvious loss of precision (nanoseconds to milliseconds).
+  auto milliseconds = 1.0 * (seconds * 1000 + nanoseconds / 10000000);
+  auto output = Napi::Date::New(env, milliseconds);
+  return scope.Escape(napi_value(output));
 }
 
-Napi::Value MgDurationToNapiDuration(Napi::Env env, const mg_duration *) {
-  return env.Null();
+Napi::Value MgDurationToNapiDuration(Napi::Env env, const mg_duration *input) {
+  // An object suitable to store mg_duration doesn't exist.
+  // TODO(gitbuda): Figure out how to transform mg_duration.
+  Napi::EscapableHandleScope scope(env);
+  auto days = mg_duration_days(input);
+  auto seconds = mg_duration_seconds(input);
+  auto nanoseconds = mg_duration_nanoseconds(input);
+  Napi::Object output = Napi::Object::New(env);
+  output.Set("type", "mgduration");
+  output.Set("days", Napi::BigInt::New(env, days));
+  output.Set("seconds", Napi::BigInt::New(env, seconds));
+  output.Set("nanoseconds", Napi::BigInt::New(env, nanoseconds));
+  return scope.Escape(napi_value(output));
 }
 
 std::optional<Napi::Value> MgListToNapiArray(Napi::Env env,
@@ -230,7 +256,7 @@ std::optional<Napi::Value> MgValueToNapiValue(Napi::Env env,
       return scope.Escape(napi_value(
           MgLocalTimeToNapiLocalTime(env, mg_value_local_time(input_value))));
     case MG_VALUE_TYPE_LOCAL_DATE_TIME:
-      return scope.Escape(napi_value(MgLocalDateTimeToNapiLocalDateTime(
+      return scope.Escape(napi_value(MgLocalDateTimeToNapiDate(
           env, mg_value_local_date_time(input_value))));
     case MG_VALUE_TYPE_DURATION:
       return scope.Escape(napi_value(

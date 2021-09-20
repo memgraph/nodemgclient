@@ -40,6 +40,9 @@ test('Queries basic data types', async () => {
     const mapValue = util.firstRecord(
       await connection.ExecuteAndFetchAll('RETURN {k1: 1, k2: "v"} as d;'),
     );
+
+    // TODO(gitbuda): Add tests for temporal types (Docker required).
+
     expect(mapValue).toEqual({ k1: 1n, k2: 'v' });
   }, port);
 }, 10000);
