@@ -377,7 +377,23 @@ std::optional<mg_value *> NapiValueToMgValue(Napi::Env env,
     }
     output_value = mg_value_make_list(*maybe_mg_list);
   } else if (input_value.IsObject()) {
-    auto maybe_mg_map = NapiObjectToMgMap(env, input_value.As<Napi::Object>());
+    auto input_object = input_value.As<Napi::Object>();
+    if (input_object.Has("type")) {
+      auto input_object_type =
+          input_object.Get("type").As<Napi::String>().Utf8Value();
+      if (input_object_type == "mglocaltime") {
+        NODEMG_THROW(
+            "JS Local Time to Memgraph Local Time not yet implemented!");
+        return std::nullopt;
+      } else if (input_object_type == "mgduration") {
+        NODEMG_THROW("JS Duration to Memgraph Duration not yet implemented!");
+        return std::nullopt;
+      } else {
+        NODEMG_THROW("Unknown type of JS Object!");
+        return std::nullopt;
+      }
+    }
+    auto maybe_mg_map = NapiObjectToMgMap(env, input_object);
     if (!maybe_mg_map) {
       return std::nullopt;
     }
