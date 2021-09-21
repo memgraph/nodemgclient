@@ -37,8 +37,6 @@ Napi::Value MgDateToNapiDate(Napi::Env env, const mg_date *input) {
 
 Napi::Value MgLocalTimeToNapiLocalTime(Napi::Env env,
                                        const mg_local_time *input) {
-  // An object suitable to store mg_local_time doesn't exist.
-  // TODO(gitbuda): Figure out how to transform mg_local_time.
   Napi::EscapableHandleScope scope(env);
   auto nanoseconds = mg_local_time_nanoseconds(input);
   Napi::Object output = Napi::Object::New(env);
@@ -316,6 +314,50 @@ std::optional<Napi::Value> MgValueToNapiValue(Napi::Env env,
   }
 }
 
+std::optional<int64_t> GetInt64Value(Napi::Object input,
+                                     const std::string &key) {
+  if (!input.Has(key)) return std::nullopt;
+  auto key_value = input.Get(key);
+  if (!key_value.IsBigInt()) return std::nullopt;
+  bool lossless;
+  auto value = key_value.As<Napi::BigInt>().Int64Value(&lossless);
+  if (!lossless) {
+    return std::nullopt;
+  }
+  return value;
+}
+
+std::optional<mg_date *> NapiObjectToMgDate(Napi::Object input) {
+  auto maybe_days = GetInt64Value(input, "days");
+  if (!maybe_days) return std::nullopt;
+  return mg_date_make(*maybe_days);
+}
+
+std::optional<mg_local_time *> NapiObjectToMgLocalTime(Napi::Object input) {
+  auto maybe_nanoseconds = GetInt64Value(input, "nanoseconds");
+  if (!maybe_nanoseconds) return std::nullopt;
+  return mg_local_time_make(*maybe_nanoseconds);
+}
+
+std::optional<mg_local_date_time *> NapiObjectToMgLocalDateTime(
+    Napi::Object input) {
+  auto maybe_seconds = GetInt64Value(input, "seconds");
+  if (!maybe_seconds) return std::nullopt;
+  auto maybe_nanoseconds = GetInt64Value(input, "nanoseconds");
+  if (!maybe_nanoseconds) return std::nullopt;
+  return mg_local_date_time_make(*maybe_seconds, *maybe_nanoseconds);
+}
+
+std::optional<mg_duration *> NapiObjectToMgDuration(Napi::Object input) {
+  auto maybe_days = GetInt64Value(input, "days");
+  if (!maybe_days) return std::nullopt;
+  auto maybe_seconds = GetInt64Value(input, "seconds");
+  if (!maybe_seconds) return std::nullopt;
+  auto maybe_nanoseconds = GetInt64Value(input, "nanoseconds");
+  if (!maybe_nanoseconds) return std::nullopt;
+  return mg_duration_make(0, *maybe_days, *maybe_seconds, *maybe_nanoseconds);
+}
+
 std::optional<mg_list *> NapiArrayToMgList(Napi::Env env,
                                            Napi::Array input_array) {
   mg_list *output_list = nullptr;
@@ -368,35 +410,52 @@ std::optional<mg_value *> NapiValueToMgValue(Napi::Env env,
       return std::nullopt;
     }
     output_value = mg_value_make_string2(input_mg_string);
-  } else if (input_value.IsDate()) {
-    NODEMG_THROW("JS Date to Memgraph Date not yet implemented!");
-    return std::nullopt;
   } else if (input_value.IsArray()) {
     auto maybe_mg_list = NapiArrayToMgList(env, input_value.As<Napi::Array>());
     if (!maybe_mg_list) {
       return std::nullopt;
     }
     output_value = mg_value_make_list(*maybe_mg_list);
+    // NOTE: The "dispatch" below could be implemented in a much better way
+    // (probably the whole function as well), but that's a nice exercise for the
+    // future.
   } else if (input_value.IsObject()) {
     auto input_object = input_value.As<Napi::Object>();
     if (input_object.Has("objectType")) {
       auto input_object_type =
           input_object.Get("objectType").As<Napi::String>().Utf8Value();
       if (input_object_type == "date") {
-        NODEMG_THROW("JS Date to Memgraph Date not yet implemented!");
-        return std::nullopt;
+        auto maybe_mg_date = NapiObjectToMgDate(input_object);
+        if (!maybe_mg_date) {
+          NODEMG_THROW("Converting JS date to Memgraph date failed!");
+          return std::nullopt;
+        }
+        output_value = mg_value_make_date(*maybe_mg_date);
       } else if (input_object_type == "local_time") {
-        NODEMG_THROW(
-            "JS Local Time to Memgraph Local Time not yet implemented!");
-        return std::nullopt;
+        auto maybe_mg_local_time = NapiObjectToMgLocalTime(input_object);
+        if (!maybe_mg_local_time) {
+          NODEMG_THROW(
+              "Converting JS local time to Memgraph local time failed!");
+          return std::nullopt;
+        }
+        output_value = mg_value_make_local_time(*maybe_mg_local_time);
       } else if (input_object_type == "local_date_time") {
-        NODEMG_THROW(
-            "JS Local Date Time to Memgraph Local Date Time not yet "
-            "implemented!");
-        return std::nullopt;
+        auto maybe_mg_local_date_time =
+            NapiObjectToMgLocalDateTime(input_object);
+        if (!maybe_mg_local_date_time) {
+          NODEMG_THROW(
+              "Converting JS local date time to Memgraph local date time "
+              "failed!");
+          return std::nullopt;
+        }
+        output_value = mg_value_make_local_date_time(*maybe_mg_local_date_time);
       } else if (input_object_type == "duration") {
-        NODEMG_THROW("JS Duration to Memgraph Duration not yet implemented!");
-        return std::nullopt;
+        auto maybe_mg_duration = NapiObjectToMgDuration(input_object);
+        if (!maybe_mg_duration) {
+          NODEMG_THROW("Converting JS duration to Memgraph duration failed!");
+          return std::nullopt;
+        }
+        output_value = mg_value_make_duration(*maybe_mg_duration);
       } else {
         NODEMG_THROW("Unknown type of JS Object!");
         return std::nullopt;
