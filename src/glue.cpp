@@ -20,7 +20,6 @@ namespace nodemg {
 
 Napi::Value MgStringToNapiString(Napi::Env env, const mg_string *input_string) {
   Napi::EscapableHandleScope scope(env);
-
   Napi::Value output_string = Napi::String::New(
       env, mg_string_data(input_string), mg_string_size(input_string));
   return scope.Escape(napi_value(output_string));
@@ -28,9 +27,12 @@ Napi::Value MgStringToNapiString(Napi::Env env, const mg_string *input_string) {
 
 Napi::Value MgDateToNapiDate(Napi::Env env, const mg_date *input) {
   Napi::EscapableHandleScope scope(env);
+  Napi::Object output = Napi::Object::New(env);
   auto days = mg_date_days(input);
-  auto milliseconds = days * 24 * 60 * 60 * 1000;
-  return scope.Escape(napi_value(Napi::Date::New(env, milliseconds)));
+  output.Set("objectType", "date");
+  output.Set("days", Napi::BigInt::New(env, days));
+  output.Set("date", Napi::Date::New(env, days * 24 * 60 * 60 * 1000));
+  return scope.Escape(napi_value(output));
 }
 
 Napi::Value MgLocalTimeToNapiLocalTime(Napi::Env env,
@@ -40,7 +42,7 @@ Napi::Value MgLocalTimeToNapiLocalTime(Napi::Env env,
   Napi::EscapableHandleScope scope(env);
   auto nanoseconds = mg_local_time_nanoseconds(input);
   Napi::Object output = Napi::Object::New(env);
-  output.Set("type", "mglocaltime");
+  output.Set("objectType", "local_time");
   output.Set("nanoseconds", Napi::BigInt::New(env, nanoseconds));
   return scope.Escape(napi_value(output));
 }
@@ -52,7 +54,11 @@ Napi::Value MgLocalDateTimeToNapiDate(Napi::Env env,
   auto nanoseconds = mg_local_date_time_nanoseconds(input);
   // NOTE: An obvious loss of precision (nanoseconds to milliseconds).
   auto milliseconds = 1.0 * (seconds * 1000 + nanoseconds / 10000000);
-  auto output = Napi::Date::New(env, milliseconds);
+  Napi::Object output = Napi::Object::New(env);
+  output.Set("objectType", "local_date_time");
+  output.Set("seconds", Napi::BigInt::New(env, seconds));
+  output.Set("nanoseconds", Napi::BigInt::New(env, nanoseconds));
+  output.Set("date", Napi::Date::New(env, milliseconds));
   return scope.Escape(napi_value(output));
 }
 
@@ -64,7 +70,7 @@ Napi::Value MgDurationToNapiDuration(Napi::Env env, const mg_duration *input) {
   auto seconds = mg_duration_seconds(input);
   auto nanoseconds = mg_duration_nanoseconds(input);
   Napi::Object output = Napi::Object::New(env);
-  output.Set("type", "mgduration");
+  output.Set("objectType", "duration");
   output.Set("days", Napi::BigInt::New(env, days));
   output.Set("seconds", Napi::BigInt::New(env, seconds));
   output.Set("nanoseconds", Napi::BigInt::New(env, nanoseconds));
@@ -153,7 +159,7 @@ std::optional<Napi::Value> MgRelationshipToNapiRelationship(
   output_relationship.Set("id", relationship_id);
   output_relationship.Set("startNodeId", relationship_start_node_id);
   output_relationship.Set("endNodeId", relationship_end_node_id);
-  output_relationship.Set("type", relationship_type);
+  output_relationship.Set("edgeType", relationship_type);
   output_relationship.Set("properties", *relationship_properties);
   return scope.Escape(napi_value(output_relationship));
 }

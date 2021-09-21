@@ -15,6 +15,22 @@
 const Bindings = require('bindings')('nodemgclient');
 const pjson = require('./package.json');
 
+function createMgDate(days) {
+  return Null;
+}
+
+function createMgLocalTime(nanoseconds) {
+  return Null;
+}
+
+function createMgLocalDateTime(seconds, nanoseconds) {
+  return Null;
+}
+
+function createMgDuration(days, seconds, nanoseconds) {
+  return Null;
+}
+
 // This class exists becuase of additional logic that is easier to implement in
 // JavaScript + to extend the implementation with easy to use primitives.
 class Connection {

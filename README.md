@@ -44,3 +44,9 @@ To test ([Docker](https://docs.docker.com/engine/install) is required) run:
 ```bash
 npm run test
 ```
+
+## Implementation and Interface Notes
+
+### TODO(gitbuda): Complex types (nodes, edges, etc)
+
+### TODO(gitbuda): Date
