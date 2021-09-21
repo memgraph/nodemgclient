@@ -63,8 +63,6 @@ Napi::Value MgLocalDateTimeToNapiDate(Napi::Env env,
 }
 
 Napi::Value MgDurationToNapiDuration(Napi::Env env, const mg_duration *input) {
-  // An object suitable to store mg_duration doesn't exist.
-  // TODO(gitbuda): Figure out how to transform mg_duration.
   Napi::EscapableHandleScope scope(env);
   auto days = mg_duration_days(input);
   auto seconds = mg_duration_seconds(input);
@@ -80,7 +78,6 @@ Napi::Value MgDurationToNapiDuration(Napi::Env env, const mg_duration *input) {
 std::optional<Napi::Value> MgListToNapiArray(Napi::Env env,
                                              const mg_list *input_list) {
   Napi::EscapableHandleScope scope(env);
-
   auto input_list_size = mg_list_size(input_list);
   auto output_array = Napi::Array::New(env, input_list_size);
   for (uint32_t index = 0; index < input_list_size; ++index) {
@@ -96,7 +93,6 @@ std::optional<Napi::Value> MgListToNapiArray(Napi::Env env,
 std::optional<Napi::Value> MgMapToNapiObject(Napi::Env env,
                                              const mg_map *input_map) {
   Napi::EscapableHandleScope scope(env);
-
   Napi::Object output_object = Napi::Object::New(env);
   for (uint32_t i = 0; i < mg_map_size(input_map); ++i) {
     auto key = MgStringToNapiString(env, mg_map_key_at(input_map, i));
@@ -112,7 +108,6 @@ std::optional<Napi::Value> MgMapToNapiObject(Napi::Env env,
 std::optional<Napi::Value> MgNodeToNapiNode(Napi::Env env,
                                             const mg_node *input_node) {
   Napi::EscapableHandleScope scope(env);
-
   auto node_id = Napi::BigInt::New(env, mg_node_id(input_node));
 
   auto label_count = mg_node_label_count(input_node);
@@ -186,7 +181,7 @@ std::optional<Napi::Value> MgUnboundRelationshipToNapiRelationship(
   output_relationship.Set("id", relationship_id);
   output_relationship.Set("startNodeId", relationship_start_node_id);
   output_relationship.Set("endNodeId", relationship_end_node_id);
-  output_relationship.Set("type", relationship_type);
+  output_relationship.Set("edgeType", relationship_type);
   output_relationship.Set("properties", *relationship_properties);
   return scope.Escape(napi_value(output_relationship));
 }
@@ -384,14 +379,22 @@ std::optional<mg_value *> NapiValueToMgValue(Napi::Env env,
     output_value = mg_value_make_list(*maybe_mg_list);
   } else if (input_value.IsObject()) {
     auto input_object = input_value.As<Napi::Object>();
-    if (input_object.Has("type")) {
+    if (input_object.Has("objectType")) {
       auto input_object_type =
-          input_object.Get("type").As<Napi::String>().Utf8Value();
-      if (input_object_type == "mglocaltime") {
+          input_object.Get("objectType").As<Napi::String>().Utf8Value();
+      if (input_object_type == "date") {
+        NODEMG_THROW("JS Date to Memgraph Date not yet implemented!");
+        return std::nullopt;
+      } else if (input_object_type == "local_time") {
         NODEMG_THROW(
             "JS Local Time to Memgraph Local Time not yet implemented!");
         return std::nullopt;
-      } else if (input_object_type == "mgduration") {
+      } else if (input_object_type == "local_date_time") {
+        NODEMG_THROW(
+            "JS Local Date Time to Memgraph Local Date Time not yet "
+            "implemented!");
+        return std::nullopt;
+      } else if (input_object_type == "duration") {
         NODEMG_THROW("JS Duration to Memgraph Duration not yet implemented!");
         return std::nullopt;
       } else {

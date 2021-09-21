@@ -47,6 +47,8 @@ npm run test
 
 ## Implementation and Interface Notes
 
+An object suitable to store `mg_duration` and `mg_local_time` don't exist.
+
 ### TODO(gitbuda): Complex types (nodes, edges, etc)
 
 ### TODO(gitbuda): Date

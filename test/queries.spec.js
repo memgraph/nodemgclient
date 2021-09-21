@@ -115,7 +115,7 @@ test('Queries create and fetch a relationship', async () => {
       await connection.ExecuteAndFetchAll(query.EDGES),
     );
     expect(node.id).toBeGreaterThanOrEqual(0);
-    expect(node.type).toContain('Type');
+    expect(node.edgeType).toContain('Type');
     expect(node.properties.prop1).toEqual(true);
     expect(node.properties.prop2).toEqual(false);
     expect(node.properties.prop3).toEqual(1n);
@@ -177,7 +177,7 @@ test('Queries create and fetch a path', async () => {
       expect.objectContaining({
         startNodeId: 0n,
         endNodeId: 1n,
-        type: 'Type',
+        edgeType: 'Type',
         properties: { id: 1n },
       }),
     );
@@ -185,7 +185,7 @@ test('Queries create and fetch a path', async () => {
       expect.objectContaining({
         startNodeId: 1n,
         endNodeId: 2n,
-        type: 'Type',
+        edgeType: 'Type',
         properties: { id: 2n },
       }),
     );
@@ -193,7 +193,7 @@ test('Queries create and fetch a path', async () => {
       expect.objectContaining({
         startNodeId: 2n,
         endNodeId: 3n,
-        type: 'Type',
+        edgeType: 'Type',
         properties: { id: 3n },
       }),
     );
@@ -229,7 +229,7 @@ test('Queries create path and fetch unbound relationship', async () => {
       expect.objectContaining({
         startNodeId: 0n,
         endNodeId: 1n,
-        type: 'Type',
+        edgeType: 'Type',
         properties: { id: 1n },
       }),
     );
