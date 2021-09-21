@@ -47,8 +47,19 @@ npm run test
 
 ## Implementation and Interface Notes
 
-An object suitable to store `mg_duration` and `mg_local_time` don't exist.
+### Temporal Types
 
-### TODO(gitbuda): Complex types (nodes, edges, etc)
+Suitable JS type to store Memgrpah temporal types don't exist. In particular,
+it's impossible to convert `mg_duration` and `mg_local_time` to the `Date`
+type. Since [the temporal
+specification](https://github.com/tc39/proposal-temporal) is not yet widely
+supported, the decision was to expose plain JS objects (dict) with the exact
+fields `mgclient` is providing. In addition, when possible (`mg_date` and
+`mg_local_date_time`), are converted into objects which have `date` property,
+which in fact, is the `Date` representation of these types. Keep in mind the
+loss of precision because `Date` can only store millisecond precision, but the
+object still contains original info as a separate property.
 
-### TODO(gitbuda): Date
+Module exposes `create` functions, e.g. `createMgDate`, which simplify creation
+of temporal object interpretable by Memgraph. For more details take a look
+under the API docs.

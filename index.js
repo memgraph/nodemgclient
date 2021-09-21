@@ -15,20 +15,60 @@
 const Bindings = require('bindings')('nodemgclient');
 const pjson = require('./package.json');
 
+// The purpose of create functions is to simplify creation of Memgraph specific
+// data types, e.g. temporal types.
+
+/**
+  * Create Memgraph compatible date object.
+  * @param {number} days - The number of days since 1970-01-01 (unix epoch).
+  */
 function createMgDate(days) {
-  return Null;
+  return {
+    "objectType": "date",
+    "days": days,
+  }
 }
 
+/**
+  * Create Memgraph compatible local time object.
+  *
+  * @param {number} nanoseconds - The number of nanoseconds since midnight.
+  */
 function createMgLocalTime(nanoseconds) {
-  return Null;
+  return {
+    "objectType": "local_time",
+    "nanoseconds": nanoseconds,
+  }
 }
 
+/**
+  * Create Memgraph compatible local date time object.
+  * @param {number} seconds - The number of seconds since 1970-01-01 (unix epoch).
+  * @param {number} nanoseconds - The number of nanoseconds since the last second.
+  */
 function createMgLocalDateTime(seconds, nanoseconds) {
-  return Null;
+  return {
+    "objectType": "local_date_time",
+    "seconds": seconds,
+    "nanoseconds": nanoseconds,
+  }
 }
 
+/**
+  * Create Memgraph compatible duration object.
+  * NOTE: Semantically Memgraph duration is a sum of all
+  * components (days, seconds, nanoseconds).
+  * @param {number} days - The number of days.
+  * @param {number} seconds - The number of seconds.
+  * @param {number} nanoseconds - The number of nanoseconds.
+  */
 function createMgDuration(days, seconds, nanoseconds) {
-  return Null;
+  return {
+    "objectType": "local_date_time",
+    "days": days,
+    "seconds": seconds,
+    "nanoseconds": nanoseconds,
+  }
 }
 
 // This class exists becuase of additional logic that is easier to implement in
@@ -86,4 +126,8 @@ module.exports = {
   Client: Memgraph.Client,
   Connect: Memgraph.Connect,
   Memgraph: Memgraph,
+  createMgDate: createMgDate,
+  createMgLocalTime: createMgLocalTime,
+  createMgLocalDateTime: createMgLocalDateTime,
+  createMgDuration: createMgDuration,
 }

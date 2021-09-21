@@ -122,6 +122,7 @@ std::optional<Napi::Value> MgNodeToNapiNode(Napi::Env env,
   }
 
   Napi::Object output_node = Napi::Object::New(env);
+  output_node.Set("objectType", "node");
   output_node.Set("id", node_id);
   output_node.Set("labels", node_labels);
   output_node.Set("properties", *node_properties);
@@ -149,6 +150,7 @@ std::optional<Napi::Value> MgRelationshipToNapiRelationship(
   }
 
   Napi::Object output_relationship = Napi::Object::New(env);
+  output_relationship.Set("objectType", "relationship");
   output_relationship.Set("id", relationship_id);
   output_relationship.Set("startNodeId", relationship_start_node_id);
   output_relationship.Set("endNodeId", relationship_end_node_id);
@@ -176,6 +178,7 @@ std::optional<Napi::Value> MgUnboundRelationshipToNapiRelationship(
   }
 
   Napi::Object output_relationship = Napi::Object::New(env);
+  output_relationship.Set("objectType", "relationship");
   output_relationship.Set("id", relationship_id);
   output_relationship.Set("startNodeId", relationship_start_node_id);
   output_relationship.Set("endNodeId", relationship_end_node_id);
@@ -221,6 +224,7 @@ std::optional<Napi::Value> MgPathToNapiPath(Napi::Env env,
   }
 
   Napi::Object output_path = Napi::Object::New(env);
+  output_path.Set("objectType", "path");
   output_path.Set("nodes", nodes);
   output_path.Set("relationships", relationships);
   return scope.Escape(napi_value(output_path));
