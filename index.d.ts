@@ -31,7 +31,7 @@ export namespace Memgraph {
 }
 /**
   * Create Memgraph compatible date object.
-  * @param {number} days - The number of days since 1970-01-01 (unix epoch).
+  * @param {number} days - The number of days since 1970-01-01 (Unix epoch).
   */
 export function createMgDate(days: number): {
     objectType: string;
@@ -39,7 +39,6 @@ export function createMgDate(days: number): {
 };
 /**
   * Create Memgraph compatible local time object.
-  *
   * @param {number} nanoseconds - The number of nanoseconds since midnight.
   */
 export function createMgLocalTime(nanoseconds: number): {
@@ -48,8 +47,10 @@ export function createMgLocalTime(nanoseconds: number): {
 };
 /**
   * Create Memgraph compatible local date time object.
-  * @param {number} seconds - The number of seconds since 1970-01-01 (unix epoch).
-  * @param {number} nanoseconds - The number of nanoseconds since the last second.
+  * @param {number} seconds - The number of seconds since 1970-01-01T00:00:00
+  * (Unix epoch).
+  * @param {number} nanoseconds - The number of nanoseconds since the last
+  * second.
   */
 export function createMgLocalDateTime(seconds: number, nanoseconds: number): {
     objectType: string;

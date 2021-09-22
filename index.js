@@ -20,7 +20,7 @@ const pjson = require('./package.json');
 
 /**
   * Create Memgraph compatible date object.
-  * @param {number} days - The number of days since 1970-01-01 (unix epoch).
+  * @param {number} days - The number of days since 1970-01-01 (Unix epoch).
   */
 function createMgDate(days) {
   return {
@@ -31,7 +31,6 @@ function createMgDate(days) {
 
 /**
   * Create Memgraph compatible local time object.
-  *
   * @param {number} nanoseconds - The number of nanoseconds since midnight.
   */
 function createMgLocalTime(nanoseconds) {
@@ -43,8 +42,10 @@ function createMgLocalTime(nanoseconds) {
 
 /**
   * Create Memgraph compatible local date time object.
-  * @param {number} seconds - The number of seconds since 1970-01-01 (unix epoch).
-  * @param {number} nanoseconds - The number of nanoseconds since the last second.
+  * @param {number} seconds - The number of seconds since 1970-01-01T00:00:00
+  * (Unix epoch).
+  * @param {number} nanoseconds - The number of nanoseconds since the last
+  * second.
   */
 function createMgLocalDateTime(seconds, nanoseconds) {
   return {
