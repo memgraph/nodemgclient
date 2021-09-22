@@ -323,7 +323,7 @@ std::optional<int64_t> GetInt64Value(Napi::Object input,
   if (!input.Has(key)) return std::nullopt;
   auto key_value = input.Get(key);
   if (!key_value.IsBigInt()) return std::nullopt;
-  bool lossless;
+  bool lossless{false};
   auto value = key_value.As<Napi::BigInt>().Int64Value(&lossless);
   if (!lossless) {
     return std::nullopt;
