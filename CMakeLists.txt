@@ -6,7 +6,7 @@ if (CLANG_FOUND AND CLANGXX_FOUND)
   set(CMAKE_C_COMPILER ${CLANG_FOUND})
   set(CMAKE_CXX_COMPILER ${CLANGXX_FOUND})
 else()
-  message(FATAL_ERROR "Clang and Clang++ are required!")
+  #message(FATAL_ERROR "Clang and Clang++ are required!")
 endif()
 
 project(nodemgclient VERSION 0.1.0)
@@ -39,18 +39,21 @@ ExternalProject_Get_Property(mgclient-proj install_dir)
 set(MGCLIENT_ROOT ${install_dir})
 set(MGCLIENT_INCLUDE_DIRS ${MGCLIENT_ROOT}/include
     CACHE INTERNAL "Path to mgclient include directory")
-set(MGCLIENT_LIBRARY_PATH ${MGCLIENT_ROOT}/lib/libmgclient.so)
+set(MGCLIENT_LIBRARY_PATH ${MGCLIENT_ROOT}/lib/libmgclient.dll)
+message(STATUS ${MGCLIENT_LIBRARY_PATH})
 set(MGCLIENT_LIBRARY mgclient-lib)
 add_library(${MGCLIENT_LIBRARY} SHARED IMPORTED)
 set_target_properties(${MGCLIENT_LIBRARY} PROPERTIES
                       IMPORTED_LOCATION ${MGCLIENT_LIBRARY_PATH})
 add_dependencies(${MGCLIENT_LIBRARY} mgclient-proj)
+message(STATUS ${MGCLIENT_LIBRARY})
 
 # Define the addon.
 include_directories(${CMAKE_JS_INC})
 set(SOURCE_FILES src/addon.cpp src/connection.cpp src/glue.cpp
                  src/record.cpp src/cursor.cpp)
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
+add_dependencies(${PROJECT_NAME} ${MGCLIENT_LIBRARY})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME} PRIVATE
                       ${CMAKE_JS_LIB} ${MGCLIENT_LIBRARY}
