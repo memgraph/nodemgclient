@@ -62,4 +62,10 @@ module.exports = Object.freeze({
                     arrayProperty: $arrayProperty,
                     objectProperty: $objectProperty});`,
   NAMED_COLUMNS: `RETURN "value_x" AS x, "value_y" AS y;`,
+  TEMPORAL_VALUES: `
+    RETURN
+      DATE("1960-01-12") as date,
+      LOCALTIME("10:09:08.123456") as local_time,
+      LOCALDATETIME("2021-09-30T08:01:02) as local_date_time,
+      DURATION("P1DT2H3M4.56S") AS duration;`,
 });

@@ -18,7 +18,7 @@ const memgraph = require('..');
 const query = require('./queries');
 const util = require('./util');
 
-test('Queries basic data types', async () => {
+test('Queries data types', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(async () => {
     const connection = await memgraph.Connect({
@@ -40,14 +40,20 @@ test('Queries basic data types', async () => {
     const mapValue = util.firstRecord(
       await connection.ExecuteAndFetchAll('RETURN {k1: 1, k2: "v"} as d;'),
     );
-
-    // TODO(gitbuda): Add tests for temporal types (Docker required).
-
     expect(mapValue).toEqual({ k1: 1n, k2: 'v' });
+
+    const temporalValues = util.firstRecord(
+      await connection.ExecuteAndFetchAll(query.TEMPORAL_VALUES),
+    );
+    expect(temporalValues[0].objectType).toEqual('date');
+    expect(temporalValues[1].objectType).toEqual('local_time');
+    expect(temporalValues[2].objectType).toEqual('local_date_time');
+    expect(temporalValues[3].objectType).toEqual('duration');
+    // TODO(gitbuda): Test incoming temporal values.
   }, port);
 }, 10000);
 
-test('Queries basic', async () => {
+test('Queries basic graph', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(async () => {
     const connection = await memgraph.Connect({
