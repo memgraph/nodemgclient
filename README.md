@@ -44,3 +44,11 @@ npm run build:release
 ```
 
 To run tests, [Docker](https://docs.docker.com/engine/install) is required.
+
+## Windows
+
+NOTE: Not yet possible under MinGW.
+
+If installing OpenSSL package from
+https://slproweb.com/products/Win32OpenSSL.html, make sure to use the full one
+because of the header files.
