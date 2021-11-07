@@ -20,16 +20,62 @@ namespace nodemg {
 
 Napi::Value MgStringToNapiString(Napi::Env env, const mg_string *input_string) {
   Napi::EscapableHandleScope scope(env);
-
   Napi::Value output_string = Napi::String::New(
       env, mg_string_data(input_string), mg_string_size(input_string));
   return scope.Escape(napi_value(output_string));
 }
 
+Napi::Value MgDateToNapiDate(Napi::Env env, const mg_date *input) {
+  Napi::EscapableHandleScope scope(env);
+  Napi::Object output = Napi::Object::New(env);
+  auto days = mg_date_days(input);
+  output.Set("objectType", "date");
+  output.Set("days", Napi::BigInt::New(env, days));
+  output.Set("date", Napi::Date::New(env, days * 24 * 60 * 60 * 1000));
+  return scope.Escape(napi_value(output));
+}
+
+Napi::Value MgLocalTimeToNapiLocalTime(Napi::Env env,
+                                       const mg_local_time *input) {
+  Napi::EscapableHandleScope scope(env);
+  auto nanoseconds = mg_local_time_nanoseconds(input);
+  Napi::Object output = Napi::Object::New(env);
+  output.Set("objectType", "local_time");
+  output.Set("nanoseconds", Napi::BigInt::New(env, nanoseconds));
+  return scope.Escape(napi_value(output));
+}
+
+Napi::Value MgLocalDateTimeToNapiDate(Napi::Env env,
+                                      const mg_local_date_time *input) {
+  Napi::EscapableHandleScope scope(env);
+  auto seconds = mg_local_date_time_seconds(input);
+  auto nanoseconds = mg_local_date_time_nanoseconds(input);
+  // NOTE: An obvious loss of precision (nanoseconds to milliseconds).
+  auto milliseconds = 1.0 * (seconds * 1000 + nanoseconds / 10000000);
+  Napi::Object output = Napi::Object::New(env);
+  output.Set("objectType", "local_date_time");
+  output.Set("seconds", Napi::BigInt::New(env, seconds));
+  output.Set("nanoseconds", Napi::BigInt::New(env, nanoseconds));
+  output.Set("date", Napi::Date::New(env, milliseconds));
+  return scope.Escape(napi_value(output));
+}
+
+Napi::Value MgDurationToNapiDuration(Napi::Env env, const mg_duration *input) {
+  Napi::EscapableHandleScope scope(env);
+  auto days = mg_duration_days(input);
+  auto seconds = mg_duration_seconds(input);
+  auto nanoseconds = mg_duration_nanoseconds(input);
+  Napi::Object output = Napi::Object::New(env);
+  output.Set("objectType", "duration");
+  output.Set("days", Napi::BigInt::New(env, days));
+  output.Set("seconds", Napi::BigInt::New(env, seconds));
+  output.Set("nanoseconds", Napi::BigInt::New(env, nanoseconds));
+  return scope.Escape(napi_value(output));
+}
+
 std::optional<Napi::Value> MgListToNapiArray(Napi::Env env,
                                              const mg_list *input_list) {
   Napi::EscapableHandleScope scope(env);
-
   auto input_list_size = mg_list_size(input_list);
   auto output_array = Napi::Array::New(env, input_list_size);
   for (uint32_t index = 0; index < input_list_size; ++index) {
@@ -45,7 +91,6 @@ std::optional<Napi::Value> MgListToNapiArray(Napi::Env env,
 std::optional<Napi::Value> MgMapToNapiObject(Napi::Env env,
                                              const mg_map *input_map) {
   Napi::EscapableHandleScope scope(env);
-
   Napi::Object output_object = Napi::Object::New(env);
   for (uint32_t i = 0; i < mg_map_size(input_map); ++i) {
     auto key = MgStringToNapiString(env, mg_map_key_at(input_map, i));
@@ -61,7 +106,6 @@ std::optional<Napi::Value> MgMapToNapiObject(Napi::Env env,
 std::optional<Napi::Value> MgNodeToNapiNode(Napi::Env env,
                                             const mg_node *input_node) {
   Napi::EscapableHandleScope scope(env);
-
   auto node_id = Napi::BigInt::New(env, mg_node_id(input_node));
 
   auto label_count = mg_node_label_count(input_node);
@@ -78,6 +122,7 @@ std::optional<Napi::Value> MgNodeToNapiNode(Napi::Env env,
   }
 
   Napi::Object output_node = Napi::Object::New(env);
+  output_node.Set("objectType", "node");
   output_node.Set("id", node_id);
   output_node.Set("labels", node_labels);
   output_node.Set("properties", *node_properties);
@@ -105,10 +150,11 @@ std::optional<Napi::Value> MgRelationshipToNapiRelationship(
   }
 
   Napi::Object output_relationship = Napi::Object::New(env);
+  output_relationship.Set("objectType", "relationship");
   output_relationship.Set("id", relationship_id);
   output_relationship.Set("startNodeId", relationship_start_node_id);
   output_relationship.Set("endNodeId", relationship_end_node_id);
-  output_relationship.Set("type", relationship_type);
+  output_relationship.Set("edgeType", relationship_type);
   output_relationship.Set("properties", *relationship_properties);
   return scope.Escape(napi_value(output_relationship));
 }
@@ -132,10 +178,11 @@ std::optional<Napi::Value> MgUnboundRelationshipToNapiRelationship(
   }
 
   Napi::Object output_relationship = Napi::Object::New(env);
+  output_relationship.Set("objectType", "relationship");
   output_relationship.Set("id", relationship_id);
   output_relationship.Set("startNodeId", relationship_start_node_id);
   output_relationship.Set("endNodeId", relationship_end_node_id);
-  output_relationship.Set("type", relationship_type);
+  output_relationship.Set("edgeType", relationship_type);
   output_relationship.Set("properties", *relationship_properties);
   return scope.Escape(napi_value(output_relationship));
 }
@@ -177,6 +224,7 @@ std::optional<Napi::Value> MgPathToNapiPath(Napi::Env env,
   }
 
   Napi::Object output_path = Napi::Object::New(env);
+  output_path.Set("objectType", "path");
   output_path.Set("nodes", nodes);
   output_path.Set("relationships", relationships);
   return scope.Escape(napi_value(output_path));
@@ -204,6 +252,18 @@ std::optional<Napi::Value> MgValueToNapiValue(Napi::Env env,
     case MG_VALUE_TYPE_STRING:
       return scope.Escape(
           napi_value(MgStringToNapiString(env, mg_value_string(input_value))));
+    case MG_VALUE_TYPE_DATE:
+      return scope.Escape(
+          napi_value(MgDateToNapiDate(env, mg_value_date(input_value))));
+    case MG_VALUE_TYPE_LOCAL_TIME:
+      return scope.Escape(napi_value(
+          MgLocalTimeToNapiLocalTime(env, mg_value_local_time(input_value))));
+    case MG_VALUE_TYPE_LOCAL_DATE_TIME:
+      return scope.Escape(napi_value(MgLocalDateTimeToNapiDate(
+          env, mg_value_local_date_time(input_value))));
+    case MG_VALUE_TYPE_DURATION:
+      return scope.Escape(napi_value(
+          MgDurationToNapiDuration(env, mg_value_duration(input_value))));
     case MG_VALUE_TYPE_LIST: {
       auto list_value = MgListToNapiArray(env, mg_value_list(input_value));
       if (!list_value) {
@@ -256,6 +316,50 @@ std::optional<Napi::Value> MgValueToNapiValue(Napi::Env env,
       NODEMG_THROW("Unrecognized type encountered during query execution.");
       return std::nullopt;
   }
+}
+
+std::optional<int64_t> GetInt64Value(Napi::Object input,
+                                     const std::string &key) {
+  if (!input.Has(key)) return std::nullopt;
+  auto key_value = input.Get(key);
+  if (!key_value.IsBigInt()) return std::nullopt;
+  bool lossless{false};
+  auto value = key_value.As<Napi::BigInt>().Int64Value(&lossless);
+  if (!lossless) {
+    return std::nullopt;
+  }
+  return value;
+}
+
+std::optional<mg_date *> NapiObjectToMgDate(Napi::Object input) {
+  auto maybe_days = GetInt64Value(input, "days");
+  if (!maybe_days) return std::nullopt;
+  return mg_date_make(*maybe_days);
+}
+
+std::optional<mg_local_time *> NapiObjectToMgLocalTime(Napi::Object input) {
+  auto maybe_nanoseconds = GetInt64Value(input, "nanoseconds");
+  if (!maybe_nanoseconds) return std::nullopt;
+  return mg_local_time_make(*maybe_nanoseconds);
+}
+
+std::optional<mg_local_date_time *> NapiObjectToMgLocalDateTime(
+    Napi::Object input) {
+  auto maybe_seconds = GetInt64Value(input, "seconds");
+  if (!maybe_seconds) return std::nullopt;
+  auto maybe_nanoseconds = GetInt64Value(input, "nanoseconds");
+  if (!maybe_nanoseconds) return std::nullopt;
+  return mg_local_date_time_make(*maybe_seconds, *maybe_nanoseconds);
+}
+
+std::optional<mg_duration *> NapiObjectToMgDuration(Napi::Object input) {
+  auto maybe_days = GetInt64Value(input, "days");
+  if (!maybe_days) return std::nullopt;
+  auto maybe_seconds = GetInt64Value(input, "seconds");
+  if (!maybe_seconds) return std::nullopt;
+  auto maybe_nanoseconds = GetInt64Value(input, "nanoseconds");
+  if (!maybe_nanoseconds) return std::nullopt;
+  return mg_duration_make(0, *maybe_days, *maybe_seconds, *maybe_nanoseconds);
 }
 
 std::optional<mg_list *> NapiArrayToMgList(Napi::Env env,
@@ -316,8 +420,53 @@ std::optional<mg_value *> NapiValueToMgValue(Napi::Env env,
       return std::nullopt;
     }
     output_value = mg_value_make_list(*maybe_mg_list);
+    // NOTE: The "dispatch" below could be implemented in a much better way
+    // (probably the whole function as well), but that's a nice exercise for the
+    // future.
   } else if (input_value.IsObject()) {
-    auto maybe_mg_map = NapiObjectToMgMap(env, input_value.As<Napi::Object>());
+    auto input_object = input_value.As<Napi::Object>();
+    if (input_object.Has("objectType")) {
+      auto input_object_type =
+          input_object.Get("objectType").As<Napi::String>().Utf8Value();
+      if (input_object_type == "date") {
+        auto maybe_mg_date = NapiObjectToMgDate(input_object);
+        if (!maybe_mg_date) {
+          NODEMG_THROW("Converting JS date to Memgraph date failed!");
+          return std::nullopt;
+        }
+        output_value = mg_value_make_date(*maybe_mg_date);
+      } else if (input_object_type == "local_time") {
+        auto maybe_mg_local_time = NapiObjectToMgLocalTime(input_object);
+        if (!maybe_mg_local_time) {
+          NODEMG_THROW(
+              "Converting JS local time to Memgraph local time failed!");
+          return std::nullopt;
+        }
+        output_value = mg_value_make_local_time(*maybe_mg_local_time);
+      } else if (input_object_type == "local_date_time") {
+        auto maybe_mg_local_date_time =
+            NapiObjectToMgLocalDateTime(input_object);
+        if (!maybe_mg_local_date_time) {
+          NODEMG_THROW(
+              "Converting JS local date time to Memgraph local date time "
+              "failed!");
+          return std::nullopt;
+        }
+        output_value = mg_value_make_local_date_time(*maybe_mg_local_date_time);
+      } else if (input_object_type == "duration") {
+        auto maybe_mg_duration = NapiObjectToMgDuration(input_object);
+        if (!maybe_mg_duration) {
+          NODEMG_THROW("Converting JS duration to Memgraph duration failed!");
+          return std::nullopt;
+        }
+        output_value = mg_value_make_duration(*maybe_mg_duration);
+      } else {
+        NODEMG_THROW("Unknown type of JS Object!");
+        return std::nullopt;
+      }
+      return output_value;
+    }
+    auto maybe_mg_map = NapiObjectToMgMap(env, input_object);
     if (!maybe_mg_map) {
       return std::nullopt;
     }

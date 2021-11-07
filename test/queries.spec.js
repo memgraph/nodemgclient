@@ -18,7 +18,7 @@ const memgraph = require('..');
 const query = require('./queries');
 const util = require('./util');
 
-test('Queries basic data types', async () => {
+test('Queries data types', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(async () => {
     const connection = await memgraph.Connect({
@@ -41,10 +41,35 @@ test('Queries basic data types', async () => {
       await connection.ExecuteAndFetchAll('RETURN {k1: 1, k2: "v"} as d;'),
     );
     expect(mapValue).toEqual({ k1: 1n, k2: 'v' });
+
+    const temporalValues = await connection.ExecuteAndFetchAll(
+      query.TEMPORAL_VALUES,
+    );
+    expect(temporalValues[0][0]).toEqual({
+      objectType: 'date',
+      days: -3642n,
+      date: new Date('1960-01-12T00:00:00.000Z'),
+    });
+    expect(temporalValues[0][1]).toEqual({
+      objectType: 'local_time',
+      nanoseconds: 36548123456000n,
+    });
+    expect(temporalValues[0][2]).toEqual({
+      objectType: 'local_date_time',
+      seconds: 1632988862n,
+      nanoseconds: 0n,
+      date: new Date('2021-09-30T08:01:02.000Z'),
+    });
+    expect(temporalValues[0][3]).toEqual({
+      objectType: 'duration',
+      days: 1n,
+      seconds: 7384n,
+      nanoseconds: 560000000n,
+    });
   }, port);
 }, 10000);
 
-test('Queries basic', async () => {
+test('Queries basic graph', async () => {
   const port = await getPort();
   await util.checkAgainstMemgraph(async () => {
     const connection = await memgraph.Connect({
@@ -112,7 +137,7 @@ test('Queries create and fetch a relationship', async () => {
       await connection.ExecuteAndFetchAll(query.EDGES),
     );
     expect(node.id).toBeGreaterThanOrEqual(0);
-    expect(node.type).toContain('Type');
+    expect(node.edgeType).toContain('Type');
     expect(node.properties.prop1).toEqual(true);
     expect(node.properties.prop2).toEqual(false);
     expect(node.properties.prop3).toEqual(1n);
@@ -174,7 +199,7 @@ test('Queries create and fetch a path', async () => {
       expect.objectContaining({
         startNodeId: 0n,
         endNodeId: 1n,
-        type: 'Type',
+        edgeType: 'Type',
         properties: { id: 1n },
       }),
     );
@@ -182,7 +207,7 @@ test('Queries create and fetch a path', async () => {
       expect.objectContaining({
         startNodeId: 1n,
         endNodeId: 2n,
-        type: 'Type',
+        edgeType: 'Type',
         properties: { id: 2n },
       }),
     );
@@ -190,7 +215,7 @@ test('Queries create and fetch a path', async () => {
       expect.objectContaining({
         startNodeId: 2n,
         endNodeId: 3n,
-        type: 'Type',
+        edgeType: 'Type',
         properties: { id: 3n },
       }),
     );
@@ -226,7 +251,7 @@ test('Queries create path and fetch unbound relationship', async () => {
       expect.objectContaining({
         startNodeId: 0n,
         endNodeId: 1n,
-        type: 'Type',
+        edgeType: 'Type',
         properties: { id: 1n },
       }),
     );
@@ -241,7 +266,13 @@ test('Queries use query parameters', async () => {
       port: port,
     });
     expect(connection).toBeDefined();
-
+    const dateProperty = memgraph.createMgDate(-3642n);
+    const localTimeProperty = memgraph.createMgLocalTime(36548123456000n);
+    const localDateTimeProperty = memgraph.createMgLocalDateTime(
+      1632988862n,
+      0n,
+    );
+    const durationProperty = memgraph.createMgDuration(1n, 7384n, 560000000n);
     await connection.ExecuteAndFetchAll(query.DELETE_ALL);
     await connection.ExecuteAndFetchAll(query.CREATE_NODE_USING_PARAMS, {
       nullProperty: null,
@@ -252,6 +283,10 @@ test('Queries use query parameters', async () => {
       stringProperty: 'string test',
       arrayProperty: ['one', 'two'],
       objectProperty: { one: 'one', two: 'two' },
+      dateProperty: dateProperty,
+      localTimeProperty: localTimeProperty,
+      localDateTimeProperty: localDateTimeProperty,
+      durationProperty: durationProperty,
     });
     const nodesNo = util.firstRecord(
       await connection.ExecuteAndFetchAll(query.COUNT_NODES),
@@ -272,6 +307,19 @@ test('Queries use query parameters', async () => {
           stringProperty: 'string test',
           arrayProperty: ['one', 'two'],
           objectProperty: { one: 'one', two: 'two' },
+          dateProperty: {
+            objectType: 'date',
+            days: -3642n,
+            date: new Date('1960-01-12T00:00:00.000Z'),
+          },
+          localTimeProperty: localTimeProperty,
+          localDateTimeProperty: {
+            objectType: 'local_date_time',
+            seconds: 1632988862n,
+            nanoseconds: 0n,
+            date: new Date('2021-09-30T08:01:02.000Z'),
+          },
+          durationProperty: durationProperty,
         },
       }),
     );
