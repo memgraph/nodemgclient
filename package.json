@@ -21,6 +21,7 @@
     "url": "https://github.com/memgraph/nodemgclient.git"
   },
   "scripts": {
+    "clean:build": "cd build && rm -rf ./* && cd ..",
     "build:release": "npx cmake-js configure --debug=false --generator='Unix Makefiles' && npx cmake-js compile",
     "build:debug": "npx cmake-js configure --debug=true --generator='Unix Makefiles' && npx cmake-js compile",
     "lint": "npx eslint -c .eslintrc.js './{src,test,lib,example}/**/*.js'",
