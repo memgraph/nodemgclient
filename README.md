@@ -8,7 +8,7 @@
 
 ## Installation
 
-### Build from Source
+### Build from Source on Linux
 
 To install `nodemgclient` from sources you will need (only Linux is tested at
 the moment):
@@ -44,6 +44,13 @@ To test ([Docker](https://docs.docker.com/engine/install) is required) run:
 ```bash
 npm run test
 ```
+### Build from Source on Windows
+
+NOTE: Not yet possible under MinGW.
+
+If installing OpenSSL package from
+https://slproweb.com/products/Win32OpenSSL.html, make sure to use the full one
+because of the header files.
 
 ## Implementation and Interface Notes
 
