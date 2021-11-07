@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Memgraph Ltd. [https://memgraph.com]
+// Copyright (c) 2016-2021 Memgraph Ltd. [https://memgraph.com]
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const memgraph = require('..');
-const query = require('../test/queries');
+import {Memgraph, Connection} from '../..';
 
 (async () => {
   try {
-    const connection = await memgraph.Connect({
-      host: 'localhost',
-      port: 7687,
-    });
-    await connection.ExecuteAndFetchAll(query.DELETE_ALL);
-    await connection.ExecuteAndFetchAll(query.CREATE_RICH_NODE);
-    await connection.ExecuteAndFetchAll(query.CREATE_RICH_EDGE);
-
-    console.log(await connection.ExecuteAndFetchAll(query.NODES));
-    console.log(await connection.ExecuteAndFetchAll(query.EDGES));
+    const connection:Connection = await Memgraph.Connect({ host: 'localhost', port: 7687 });
+    console.log(await connection.ExecuteAndFetchAll("MATCH (n) RETURN n LIMIT 1;"));
   } catch (e) {
     console.log(e);
   }

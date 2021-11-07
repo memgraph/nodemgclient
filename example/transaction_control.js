@@ -12,25 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const memgraph = require('../lib');
+const memgraph = require('..');
 const query = require('../test/queries');
 
 (async () => {
   try {
-    const connection = memgraph.Connect({ host: 'localhost', port: 7687 });
-    await connection.ExecuteAndFetchRecords(query.DELETE_ALL);
+    const connection = await memgraph.Connect({
+      host: 'localhost',
+      port: 7687,
+    });
+    await connection.ExecuteAndFetchAll(query.DELETE_ALL);
 
-    const cursor = connection.Cursor();
-    cursor.Begin();
-    await cursor.Execute(`CREATE (n {name: "One"});`);
-    await cursor.Execute(`CREATE (n {name: "Two"});`);
-    cursor.Commit();
+    await connection.Begin();
+    await connection.Execute(`CREATE (n {name: "One"});`);
+    await connection.Execute(`CREATE (n {name: "Two"});`);
+    await connection.Commit();
 
-    const result = await connection.ExecuteAndFetchRecords(
-      `MATCH (n) RETURN n;`,
-    );
-    for (const record of result['data']) {
-      console.log(record.Values());
+    const result = await connection.ExecuteAndFetchAll(`MATCH (n) RETURN n;`);
+    for (const record of result) {
+      console.log(record);
     }
   } catch (e) {
     console.log(e);

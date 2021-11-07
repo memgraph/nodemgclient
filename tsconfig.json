@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "lib": [ "es6", "dom" ],
+    "module": "commonjs",
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "outDir": "dist",
+    "sourceMap": true,
+    "target": "es6"
+  },
+  "exclude": [
+    "node_modules"
+  ],
+  "files": [
+    "index.d.ts"
+  ],
+  "include": ["example/**/*"]
+}

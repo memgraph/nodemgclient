@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <optional>
-
+#include <mgclient.h>
 #include <napi.h>
 
-#include <mgclient.h>
+#include <optional>
+
+namespace nodemg {
 
 [[nodiscard]] std::optional<Napi::Value> MgValueToNapiValue(
     Napi::Env env, const mg_value *input_value);
 
-// TODO(gitbuda): Figure out how to put Napi::Array as a return value.
 [[nodiscard]] std::optional<Napi::Value> MgListToNapiArray(
     Napi::Env env, const mg_list *input_list);
 
@@ -33,3 +33,5 @@
 
 [[nodiscard]] std::optional<mg_map *> NapiObjectToMgMap(
     Napi::Env env, Napi::Object input_value);
+
+}  // namespace nodemg

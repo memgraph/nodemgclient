@@ -1,6 +1,6 @@
 {
-  "name": "mgclient",
-  "version": "0.1.0",
+  "name": "@memgraph/client",
+  "version": "0.1.1",
   "engines": {
     "node": ">=10.4.0"
   },
@@ -11,17 +11,19 @@
   ],
   "homepage": "https://github.com/memgraph/nodemgclient",
   "license": "Apache-2.0",
-  "private": true,
+  "private": false,
   "author": "Marko Budiselic <marko.budiselic@memgraph.com>",
   "contributors": [],
-  "main": "lib/index.js",
+  "main": "index.js",
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/memgraph/nodemgclient.git"
   },
   "scripts": {
-    "build:release": "npx cmake-js configure --debug=false && npx cmake-js compile",
-    "build:debug": "npx cmake-js configure --debug=true && npx cmake-js compile",
+    "clean:build": "cd build && rm -rf ./* && cd ..",
+    "build:release": "npx cmake-js configure --debug=false --generator='Unix Makefiles' && npx cmake-js compile",
+    "build:debug": "npx cmake-js configure --debug=true --generator='Unix Makefiles' && npx cmake-js compile",
     "lint": "npx eslint -c .eslintrc.js './{src,test,lib,example}/**/*.js'",
     "lint:fix": "npx eslint -c .eslintrc.js --fix './{src,test,lib,example}/**/*.js'",
     "test": "npx jest",
@@ -43,6 +45,6 @@
     "jest": "^27.0.6",
     "node-addon-api": "^4.0.0",
     "prettier": "^2.3.2",
-    "typescript": "^4.3.5"
+    "typescript": "^4.4.2"
   }
 }
