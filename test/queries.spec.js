@@ -42,14 +42,30 @@ test('Queries data types', async () => {
     );
     expect(mapValue).toEqual({ k1: 1n, k2: 'v' });
 
-    const temporalValues = util.firstRecord(
-      await connection.ExecuteAndFetchAll(query.TEMPORAL_VALUES),
+    const temporalValues = await connection.ExecuteAndFetchAll(
+      query.TEMPORAL_VALUES,
     );
-    expect(temporalValues[0].objectType).toEqual('date');
-    expect(temporalValues[1].objectType).toEqual('local_time');
-    expect(temporalValues[2].objectType).toEqual('local_date_time');
-    expect(temporalValues[3].objectType).toEqual('duration');
-    // TODO(gitbuda): Test incoming temporal values.
+    expect(temporalValues[0][0]).toEqual({
+      objectType: 'date',
+      days: -3642n,
+      date: new Date('1960-01-12T00:00:00.000Z'),
+    });
+    expect(temporalValues[0][1]).toEqual({
+      objectType: 'local_time',
+      nanoseconds: 36548123456000n,
+    });
+    expect(temporalValues[0][2]).toEqual({
+      objectType: 'local_date_time',
+      seconds: 1632988862n,
+      nanoseconds: 0n,
+      date: new Date('2021-09-30T08:01:02.000Z'),
+    });
+    expect(temporalValues[0][3]).toEqual({
+      objectType: 'duration',
+      days: 1n,
+      seconds: 7384n,
+      nanoseconds: 560000000n,
+    });
   }, port);
 }, 10000);
 
