@@ -65,7 +65,7 @@ function createMgLocalDateTime(seconds, nanoseconds) {
   */
 function createMgDuration(days, seconds, nanoseconds) {
   return {
-    "objectType": "local_date_time",
+    "objectType": "duration",
     "days": days,
     "seconds": seconds,
     "nanoseconds": nanoseconds,

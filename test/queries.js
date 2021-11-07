@@ -60,7 +60,11 @@ module.exports = Object.freeze({
                     numberProperty: $numberProperty,
                     stringProperty: $stringProperty,
                     arrayProperty: $arrayProperty,
-                    objectProperty: $objectProperty});`,
+                    objectProperty: $objectProperty,
+                    dateProperty: $dateProperty,
+                    localTimeProperty: $localTimeProperty,
+                    localDateTimeProperty: $localDateTimeProperty,
+                    durationProperty: $durationProperty});`,
   NAMED_COLUMNS: `RETURN "value_x" AS x, "value_y" AS y;`,
   TEMPORAL_VALUES: `
     RETURN

@@ -266,7 +266,13 @@ test('Queries use query parameters', async () => {
       port: port,
     });
     expect(connection).toBeDefined();
-
+    const dateProperty = memgraph.createMgDate(-3642n);
+    const localTimeProperty = memgraph.createMgLocalTime(36548123456000n);
+    const localDateTimeProperty = memgraph.createMgLocalDateTime(
+      1632988862n,
+      0n,
+    );
+    const durationProperty = memgraph.createMgDuration(1n, 7384n, 560000000n);
     await connection.ExecuteAndFetchAll(query.DELETE_ALL);
     await connection.ExecuteAndFetchAll(query.CREATE_NODE_USING_PARAMS, {
       nullProperty: null,
@@ -277,6 +283,10 @@ test('Queries use query parameters', async () => {
       stringProperty: 'string test',
       arrayProperty: ['one', 'two'],
       objectProperty: { one: 'one', two: 'two' },
+      dateProperty: dateProperty,
+      localTimeProperty: localTimeProperty,
+      localDateTimeProperty: localDateTimeProperty,
+      durationProperty: durationProperty,
     });
     const nodesNo = util.firstRecord(
       await connection.ExecuteAndFetchAll(query.COUNT_NODES),
@@ -297,11 +307,22 @@ test('Queries use query parameters', async () => {
           stringProperty: 'string test',
           arrayProperty: ['one', 'two'],
           objectProperty: { one: 'one', two: 'two' },
+          dateProperty: {
+            objectType: 'date',
+            days: -3642n,
+            date: new Date('1960-01-12T00:00:00.000Z'),
+          },
+          localTimeProperty: localTimeProperty,
+          localDateTimeProperty: {
+            objectType: 'local_date_time',
+            seconds: 1632988862n,
+            nanoseconds: 0n,
+            date: new Date('2021-09-30T08:01:02.000Z'),
+          },
+          durationProperty: durationProperty,
         },
       }),
     );
-
-    // TODO(gitbuda): Add tests for temporal query params.
   }, port);
 }, 10000);
 

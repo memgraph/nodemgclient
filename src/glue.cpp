@@ -464,6 +464,7 @@ std::optional<mg_value *> NapiValueToMgValue(Napi::Env env,
         NODEMG_THROW("Unknown type of JS Object!");
         return std::nullopt;
       }
+      return output_value;
     }
     auto maybe_mg_map = NapiObjectToMgMap(env, input_object);
     if (!maybe_mg_map) {
