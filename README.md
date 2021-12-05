@@ -32,11 +32,19 @@ sudo apt install -y npm nodejs cmake make gcc g++ clang libssl-dev
 sudo yum install -y npm nodejs cmake3 make gcc gcc-c++ clang openssl-devel
 ```
 
-Once prerequisites are in place, you can build `nodemgclient` by running:
+Once prerequisites are in place, you can build `nodemgclient` by:
+
+running the CMake config:
+
+```bash
+npm ci --ignore-scripts
+npm run build:release
+```
+
+or just using the `node-gyp` (`mgclient` has to be installed on the system):
 
 ```bash
 npm ci
-npm run build:release
 ```
 
 To test ([Docker](https://docs.docker.com/engine/install) is required) run:
@@ -44,13 +52,25 @@ To test ([Docker](https://docs.docker.com/engine/install) is required) run:
 ```bash
 npm run test
 ```
+
 ### Build from Source on Windows
 
-NOTE: Not yet possible under MinGW.
+#### Build on Windows using Visual Studio
 
+TODO
+
+#### Build on Windows under MinGW
+
+TODO
+
+NOTE: Not yet possible under MinGW.
 If installing OpenSSL package from
 https://slproweb.com/products/Win32OpenSSL.html, make sure to use the full one
 because of the header files.
+
+### Build from Source on MacOS
+
+TODO
 
 ## Implementation and Interface Notes
 
