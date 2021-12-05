@@ -17,7 +17,6 @@
       'sources': [ 'src/addon.cpp', 'src/client.cpp', 'src/glue.cpp' ],
       'include_dirs': [ "<!@(node -p \"require('node-addon-api').include\")", "build/mgclient/include" ],
       'conditions': [
-        ['OS=="lin"', { 'libraries': [ "-lmgclient" ], 'dependencies': [ "<!@(node -p \"require('node-addon-api').gyp\")" ] }],
         ['OS=="win"', {
           "msbuild_settings": {
             "ClCompile": {
@@ -42,6 +41,13 @@
                 "<(mgclient_dir)\\build\src\Debug\mgclient.dll",
               ],
             }
+          ],
+        }, { # 'OS!="win"'
+          "libraries": [
+            "-lmgclient",
+          ],
+          "dependencies": [
+            "<!@(node -p \"require('node-addon-api').gyp\")"
           ],
         }],
       ]
