@@ -34,7 +34,15 @@
           ],
           "dependencies": [
             "<!(node -p \"require('node-addon-api').gyp\")",
-          ]
+          ],
+          "copies": [
+            {
+              "destination": "<(PRODUCT_DIR)",
+              "files": [
+                "<(mgclient_dir)\\build\src\Debug\mgclient.dll",
+              ],
+            }
+          ],
         }],
       ]
     }
