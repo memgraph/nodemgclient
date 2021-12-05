@@ -30,7 +30,7 @@ async function checkAgainstMemgraph(check, port = 7687, sslEnabled = false) {
     );
   }
   const container = await docker.createContainer({
-    Image: 'memgraph:2.0.1',
+    Image: 'memgraph:2.1.0',
     Tty: false,
     AttachStdin: false,
     AttachStdout: false,

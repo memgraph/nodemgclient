@@ -57,7 +57,19 @@ npm run test
 
 #### Build on Windows using Visual Studio
 
-TODO
+`mgclient` has to be manually compiled by running:
+
+```bash
+cd mgclient/build
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_CPP_BINDINGS=ON ..
+cmake --build .
+```
+TODO(gitbuda): Somehow cmake creates `build/src/Debug` directory (move all this to mgclient repo).
+You need to set `MGCLIENT_DIR` environment variable to point to the `mgclient` directory (don't forget to reload your console/terminal/environment after setting the variable).
+```bash
+cd nodemgclient
+npm i
+```
 
 #### Build on Windows under MinGW
 
