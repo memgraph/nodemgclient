@@ -10,8 +10,7 @@
 
 ### Build from Source on Linux
 
-To install `nodemgclient` from sources you will need (only Linux is tested at
-the moment):
+To install `nodemgclient` from sources you will need:
 
 * OpenSSL >= 1.0.2
 * A CMake >= 3.10
@@ -60,29 +59,27 @@ npm run test
 `mgclient` has to be manually compiled by running:
 
 ```bash
-cd mgclient/build
+cd mgclient
+mkdir build
 cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_CPP_BINDINGS=ON ..
+# NOTE: Somehow cmake/MSVC creates `build/src/Debug` directory.
 cmake --build .
 ```
-TODO(gitbuda): Somehow cmake creates `build/src/Debug` directory (move all this to mgclient repo).
-You need to set `MGCLIENT_DIR` environment variable to point to the `mgclient` directory (don't forget to reload your console/terminal/environment after setting the variable).
+
+You need to set `MGCLIENT_DIR` environment variable to point to the `mgclient`
+directory (don't forget to reload your console/terminal/environment after
+setting the variable).
+
 ```bash
 cd nodemgclient
 npm i
 ```
 
-#### Build on Windows under MinGW
-
-TODO
-
-NOTE: Not yet possible under MinGW.
 If installing OpenSSL package from
 https://slproweb.com/products/Win32OpenSSL.html, make sure to use the full one
 because of the header files.
 
-### Build from Source on MacOS
-
-TODO
+NOTE: Not yet tested under MinGW.
 
 ## Implementation and Interface Notes
 
