@@ -39,11 +39,11 @@ elseif (APPLE)
     message(FATAL_ERROR "ON APPLE BUILD NOT YET POSSIBLE")
 endif()
 
-# Add mgclient as an imported library.
+set(MGCLIENT_GIT_TAG "v1.3.0" CACHE STRING "mgclient git tag")
 ExternalProject_Add(mgclient-proj
                     PREFIX         mgclient
                     GIT_REPOSITORY https://github.com/memgraph/mgclient.git
-                    GIT_TAG        v1.3.0
+                    GIT_TAG        "$MGCLIENT_GIT_TAG"
                     CMAKE_ARGS     "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
                                    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
                                    "-DBUILD_CPP_BINDINGS=ON"
