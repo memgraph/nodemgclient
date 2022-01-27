@@ -36,14 +36,8 @@ Once prerequisites are in place, you can build `nodemgclient` by:
 running the CMake config:
 
 ```bash
-npm ci --ignore-scripts
-npm run build:release
-```
-
-or just using the `node-gyp` (`mgclient` has to be installed on the system):
-
-```bash
 npm ci
+npm run build:release
 ```
 
 To test ([Docker](https://docs.docker.com/engine/install) is required) run:
@@ -56,30 +50,18 @@ npm run test
 
 #### Build on Windows using Visual Studio
 
-`mgclient` has to be manually compiled by running:
+Since `cmake-js` is used, compiling for Windows is very similar to compiling for Linux:
 
 ```bash
-cd mgclient
-mkdir build
-cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_CPP_BINDINGS=ON ..
-# NOTE: Somehow cmake/MSVC creates `build/src/Debug` directory.
-cmake --build .
-```
-
-You need to set `MGCLIENT_DIR` environment variable to point to the `mgclient`
-directory (don't forget to reload your console/terminal/environment after
-setting the variable).
-
-```bash
-cd nodemgclient
-npm i
+npm ci
+npm run build:release
 ```
 
 If installing OpenSSL package from
 https://slproweb.com/products/Win32OpenSSL.html, make sure to use the full one
 because of the header files.
 
-NOTE: Not yet tested under MinGW.
+NOTE: Compilation doesn NOT work yet under MinGW.
 
 ## Implementation and Interface Notes
 
