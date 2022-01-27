@@ -41,7 +41,7 @@ endif()
 
 set(MGCLIENT_GIT_TAG "v1.3.0" CACHE STRING "mgclient git tag")
 ExternalProject_Add(mgclient-proj
-                    PREFIX         mgclient
+                    PREFIX         mgclient-proj
                     GIT_REPOSITORY https://github.com/memgraph/mgclient.git
                     GIT_TAG        "${MGCLIENT_GIT_TAG}"
                     CMAKE_ARGS     "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
@@ -55,7 +55,7 @@ set(MGCLIENT_INCLUDE_DIRS ${MGCLIENT_ROOT}/include
 if (UNIX AND NOT APPLE)
     set(MGCLIENT_LIBRARY_PATH ${MGCLIENT_ROOT}/lib/libmgclient.so)
 elseif (WIN32)
-    set(MGCLIENT_LIBRARY_PATH ${MGCLIENT_ROOT}/lib/libmgclient.dll)
+    set(MGCLIENT_LIBRARY_PATH ${MGCLIENT_ROOT}/lib/mgclient.dll)
 endif()
 message(STATUS "MGCLIENT_LIBRARY_PATH: ${MGCLIENT_LIBRARY_PATH}")
 set(MGCLIENT_LIBRARY mgclient-lib)
