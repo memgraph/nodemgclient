@@ -10,8 +10,7 @@
 
 ### Build from Source on Linux
 
-To install `nodemgclient` from sources you will need (only Linux is tested at
-the moment):
+To install `nodemgclient` from source you will need:
 
 * OpenSSL >= 1.0.2
 * A CMake >= 3.10
@@ -44,13 +43,24 @@ To test ([Docker](https://docs.docker.com/engine/install) is required) run:
 ```bash
 npm run test
 ```
+
 ### Build from Source on Windows
 
-NOTE: Not yet possible under MinGW.
+#### Build on Windows using Visual Studio
+
+Since `cmake-js` is used, compiling for Windows is very similar to compiling
+for Linux:
+
+```bash
+npm ci
+npm run build:release
+```
 
 If installing OpenSSL package from
 https://slproweb.com/products/Win32OpenSSL.html, make sure to use the full one
 because of the header files.
+
+NOTE: Compilation doesn NOT work yet under MinGW.
 
 ## Implementation and Interface Notes
 
