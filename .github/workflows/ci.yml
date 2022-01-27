@@ -14,7 +14,7 @@ jobs:
         node-version: '12.x'
     - name: Install and build addon
       run: |
-        npm install --ignore-scripts
+        npm install
         npm run build:release
     - name: Lint JS code
       run: |
