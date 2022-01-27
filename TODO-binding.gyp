@@ -1,6 +1,4 @@
 {
-<<<<<<< HEAD
-=======
   'conditions': [
     ['OS=="win"', {
       'variables': {
@@ -8,7 +6,6 @@
       },
     }]
   ],
->>>>>>> 5d5b730161a905f385210295479d311d7b10c291
   'targets': [
     {
       'target_name': 'nodemgclient',
@@ -20,9 +17,6 @@
       'sources': [ 'src/addon.cpp', 'src/client.cpp', 'src/glue.cpp' ],
       'include_dirs': [ "<!@(node -p \"require('node-addon-api').include\")", "build/mgclient/include" ],
       'conditions': [
-<<<<<<< HEAD
-        ['OS=="lin"', { 'libraries': [ "-lmgclient" ], 'dependencies': [ "<!@(node -p \"require('node-addon-api').gyp\")" ] }]
-=======
         ['OS=="win"', {
           "msbuild_settings": {
             "ClCompile": {
@@ -56,7 +50,6 @@
             "<!@(node -p \"require('node-addon-api').gyp\")"
           ],
         }],
->>>>>>> 5d5b730161a905f385210295479d311d7b10c291
       ]
     }
   ]
