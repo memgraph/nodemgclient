@@ -22,8 +22,8 @@
   },
   "scripts": {
     "clean:build": "cd build && rm -rf ./* && cd ..",
-    "build:release": "npx cmake-js configure --debug=false --generator='Unix Makefiles' && npx cmake-js compile",
-    "build:debug": "npx cmake-js configure --debug=true --generator='Unix Makefiles' && npx cmake-js compile",
+    "build:release": "npx cmake-js configure --debug=false && npx cmake-js compile",
+    "build:debug": "npx cmake-js configure --debug=true && npx cmake-js compile",
     "lint": "npx eslint -c .eslintrc.js './{src,test,lib,example}/**/*.js'",
     "lint:fix": "npx eslint -c .eslintrc.js --fix './{src,test,lib,example}/**/*.js'",
     "test": "npx jest",

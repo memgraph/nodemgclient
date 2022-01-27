@@ -14,7 +14,7 @@ jobs:
         node-version: '12.x'
     - name: Install and build addon
       run: |
-        npm install
+        npm install --ignore-scripts
         npm run build:release
     - name: Lint JS code
       run: |
@@ -24,12 +24,12 @@ jobs:
       uses: actions/cache@v1
       with:
         path: ~/memgraph
-        key: cache-memgraph-v2.0.1-docker-image
+        key: cache-memgraph-v2.1.1-docker-image
     - name: Download Memgraph Docker image
       if: steps.cache-memgraph-docker.outputs.cache-hit != 'true'
       run: |
         mkdir ~/memgraph
-        curl -L https://memgraph.com/download/memgraph/v2.0.1/docker/memgraph-2.0.1-docker.tar.gz > ~/memgraph/memgraph-docker.tar.gz
+        curl -L https://memgraph.com/download/memgraph/v2.1.1/docker/memgraph-2.1.1-docker.tar.gz > ~/memgraph/memgraph-docker.tar.gz
     - name: Load Memgraph Docker image
       run: |
         docker load -i ~/memgraph/memgraph-docker.tar.gz
