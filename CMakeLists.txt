@@ -47,6 +47,7 @@ ExternalProject_Add(mgclient-proj
                     CMAKE_ARGS     "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
                                    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
                                    "-DBUILD_CPP_BINDINGS=ON"
+                                   "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
                     INSTALL_DIR    "${PROJECT_BINARY_DIR}/mgclient")
 ExternalProject_Get_Property(mgclient-proj install_dir)
 set(MGCLIENT_ROOT ${install_dir})
@@ -60,6 +61,7 @@ endif()
 message(STATUS "MGCLIENT_LIBRARY_PATH: ${MGCLIENT_LIBRARY_PATH}")
 set(MGCLIENT_LIBRARY mgclient-lib)
 add_library(${MGCLIENT_LIBRARY} SHARED IMPORTED)
+target_compile_definitions(${MGCLIENT_LIBRARY} INTERFACE mgclient_shared_EXPORTS)
 set_property(TARGET ${MGCLIENT_LIBRARY} PROPERTY IMPORTED_LOCATION ${MGCLIENT_LIBRARY_PATH})
 if (WIN32)
     set_property(TARGET ${MGCLIENT_LIBRARY} PROPERTY IMPORTED_IMPLIB ${MGCLIENT_ROOT}/lib/mgclient.lib)
@@ -73,11 +75,15 @@ set(SOURCE_FILES src/addon.cpp
                  src/client.cpp
                  src/glue.cpp)
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
+target_compile_definitions(${PROJECT_NAME} PRIVATE -Dmgclient_shared_EXPORTS)
 add_dependencies(${PROJECT_NAME} ${MGCLIENT_LIBRARY})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME} PRIVATE
                       ${CMAKE_JS_LIB} ${MGCLIENT_LIBRARY}
                       project_warnings project_options)
+if (WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Ws2_32)
+endif()
 target_include_directories(${PROJECT_NAME} PRIVATE ${MGCLIENT_INCLUDE_DIRS})
 target_compile_options(${PROJECT_NAME} PRIVATE "")
 # C++ mgclient throws, which means this project has to enable exceptions. If at
