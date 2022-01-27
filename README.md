@@ -10,7 +10,7 @@
 
 ### Build from Source on Linux
 
-To install `nodemgclient` from sources you will need:
+To install `nodemgclient` from source you will need:
 
 * OpenSSL >= 1.0.2
 * A CMake >= 3.10
@@ -31,9 +31,7 @@ sudo apt install -y npm nodejs cmake make gcc g++ clang libssl-dev
 sudo yum install -y npm nodejs cmake3 make gcc gcc-c++ clang openssl-devel
 ```
 
-Once prerequisites are in place, you can build `nodemgclient` by:
-
-running the CMake config:
+Once prerequisites are in place, you can build `nodemgclient` by running:
 
 ```bash
 npm ci
@@ -50,7 +48,8 @@ npm run test
 
 #### Build on Windows using Visual Studio
 
-Since `cmake-js` is used, compiling for Windows is very similar to compiling for Linux:
+Since `cmake-js` is used, compiling for Windows is very similar to compiling
+for Linux:
 
 ```bash
 npm ci
