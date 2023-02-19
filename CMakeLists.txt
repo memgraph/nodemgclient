@@ -15,8 +15,6 @@ project(nodemgclient VERSION 0.1.0)
 
 if (WIN32 AND MINGW)
     message(FATAL_ERROR "ON WINDOWS BUILD UNDER MINGW NOT YET POSSIBLE")
-elseif (APPLE)
-    message(FATAL_ERROR "ON APPLE BUILD NOT YET POSSIBLE")
 endif()
 
 include(ExternalProject)
@@ -44,6 +42,8 @@ if (UNIX AND NOT APPLE)
   set(MGCLIENT_LIBRARY_PATH ${MGCLIENT_INSTALL_DIR}/lib/libmgclient.so)
 elseif (WIN32)
   set(MGCLIENT_LIBRARY_PATH ${MGCLIENT_INSTALL_DIR}/lib/mgclient.dll)
+elseif (APPLE)
+  set(MGCLIENT_LIBRARY_PATH ${MGCLIENT_INSTALL_DIR}/lib/libmgclient.dylib)
 endif()
 ExternalProject_Add(mgclient-proj
   PREFIX           mgclient-proj
@@ -53,6 +53,7 @@ ExternalProject_Add(mgclient-proj
                    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
                    "-DBUILD_CPP_BINDINGS=ON"
                    "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
+                   "-DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR}"
   BUILD_BYPRODUCTS "${MGCLIENT_LIBRARY_PATH}"
   INSTALL_DIR      "${PROJECT_BINARY_DIR}/mgclient"
 )

@@ -62,6 +62,12 @@ because of the header files.
 
 NOTE: Compilation doesn NOT work yet under MinGW.
 
+## Build from Source on MacOS
+
+```
+npx cmake-js compile --CDOPENSSL_ROOT_DIR="$(brew --prefix openssl)"
+```
+
 ## Implementation and Interface Notes
 
 ### Temporal Types
