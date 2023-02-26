@@ -15,6 +15,7 @@
 #include "client.hpp"
 
 #include <cassert>
+#include <optional>
 
 #include "glue.hpp"
 #include "mgclient.hpp"
@@ -226,6 +227,7 @@ class AsyncConnectWorker final : public Napi::AsyncWorker {
         "Connect failed. Ensure Memgraph is running and Client is properly "
         "configured.";
     try {
+      mg::Client::Init();
       client_ = mg::Client::Connect(params_);
       if (!client_) {
         SetError(NODEMG_MSG_CONNECT_FAILED);

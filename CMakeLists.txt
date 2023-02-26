@@ -2,21 +2,20 @@ cmake_minimum_required(VERSION 3.10)
 
 #### NOTES:
 # * HOW TO CHANGE THE COMPILER?
-# If you want to use specific compiler, consider using -C | --cc | --cxx cmake-js flags.
+#   If you want to use specific compiler, consider using -C | --cc | --cxx cmake-js flags.
+#
 # * WINDOWS AND MINGW ISSUES?
-# cmake-js doesn't support MinGW Makefiles -> https://github.com/cmake-js/cmake-js/issues/195
-# /DELAYLOAD:NODE.EXE: No such file or directory -> https://github.com/cmake-js/cmake-js/issues/200
-# cmake-js adds /DELAYLOAD:NODE.EXE + there is not an easy solution -> Move to node-gyp
-# I've played with paths + setting the CMAKE_SHARED_LINKER_FLAGS but all that is N/A.
-# The following does not work because CMake changes the string to be Windows path.
-# set(CMAKE_SHARED_LINKER_FLAGS "/DELAYLOAD:/c/Program\\ Files/nodejs/node.exe")
+#   cmake-js doesn't support MinGW Makefiles -> https://github.com/cmake-js/cmake-js/issues/195
+#   /DELAYLOAD:NODE.EXE: No such file or directory -> https://github.com/cmake-js/cmake-js/issues/200
+#   cmake-js adds /DELAYLOAD:NODE.EXE + there is not an easy solution.
+#   I've played with paths + setting the CMAKE_SHARED_LINKER_FLAGS but all that is N/A.
+#   The following does not work because CMake changes the string to be Windows path.
+#   set(CMAKE_SHARED_LINKER_FLAGS "/DELAYLOAD:/c/Program\\ Files/nodejs/node.exe")
 
-project(nodemgclient VERSION 0.1.0)
+project(nodemgclient VERSION 0.1.2)
 
 if (WIN32 AND MINGW)
     message(FATAL_ERROR "ON WINDOWS BUILD UNDER MINGW NOT YET POSSIBLE")
-elseif (APPLE)
-    message(FATAL_ERROR "ON APPLE BUILD NOT YET POSSIBLE")
 endif()
 
 include(ExternalProject)
@@ -36,7 +35,7 @@ add_library(project_warnings INTERFACE)
 include(cmake/CompilerWarnings.cmake)
 set_project_warnings(project_warnings)
 
-set(MGCLIENT_GIT_TAG "v1.3.0" CACHE STRING "mgclient git tag")
+set(MGCLIENT_GIT_TAG "v1.4.1" CACHE STRING "mgclient git tag")
 set(MGCLIENT_LIBRARY      mgclient-lib)
 set(MGCLIENT_INSTALL_DIR  ${CMAKE_BINARY_DIR}/mgclient)
 set(MGCLIENT_INCLUDE_DIRS ${MGCLIENT_INSTALL_DIR}/include)
@@ -44,6 +43,8 @@ if (UNIX AND NOT APPLE)
   set(MGCLIENT_LIBRARY_PATH ${MGCLIENT_INSTALL_DIR}/lib/libmgclient.so)
 elseif (WIN32)
   set(MGCLIENT_LIBRARY_PATH ${MGCLIENT_INSTALL_DIR}/lib/mgclient.dll)
+elseif (APPLE)
+  set(MGCLIENT_LIBRARY_PATH ${MGCLIENT_INSTALL_DIR}/lib/libmgclient.dylib)
 endif()
 ExternalProject_Add(mgclient-proj
   PREFIX           mgclient-proj
@@ -53,6 +54,7 @@ ExternalProject_Add(mgclient-proj
                    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
                    "-DBUILD_CPP_BINDINGS=ON"
                    "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
+                   "-DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR}"
   BUILD_BYPRODUCTS "${MGCLIENT_LIBRARY_PATH}"
   INSTALL_DIR      "${PROJECT_BINARY_DIR}/mgclient"
 )
