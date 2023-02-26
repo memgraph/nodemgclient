@@ -1,5 +1,5 @@
 [![Actions Status](https://github.com/memgraph/nodemgclient/workflows/CI/badge.svg)](https://github.com/memgraph/nodemgclient/actions)
-[![status: experimental](https://github.com/GIScience/badges/raw/master/status/experimental.svg)](https://github.com/GIScience/badges#experimental)
+[![status: experimental](https://github.com/GIScience/badges/raw/master/status/experimental.svg)](https://www.npmjs.com/package/@memgraph/client)
 
 # nodemgclient - Node.js Memgraph Client
 
