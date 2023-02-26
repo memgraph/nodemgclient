@@ -50,7 +50,6 @@ npm run test
 
 Since `cmake-js` is used, compiling for Windows is very similar to compiling
 for Linux:
-
 ```bash
 npm ci
 npm run build:release
@@ -60,10 +59,26 @@ If installing OpenSSL package from
 https://slproweb.com/products/Win32OpenSSL.html, make sure to use the full one
 because of the header files.
 
-NOTE: Compilation doesn NOT work yet under MinGW.
+NOTE: Compilation does NOT work yet under MinGW.
 
 ## Build from Source on MacOS
 
+To build on MacOS it's required to install the `openssl` package, e.g.:
+```
+brew install openssl
+```
+Once the package is in place, please set the `OPENSSL_ROOT_DIR` environment variable:
+```
+export OPENSSL_ROOT_DIR="$(brew --prefix openssl)"
+```
+Once OpenSSL is in place, please run:
+```
+npm ci
+npm run build:release
+```
+
+NOTE: For more adventurous folks, since `cmake-js` is used, it's also possible to set
+the OpenSSL path via the following commend:
 ```
 npx cmake-js compile --CDOPENSSL_ROOT_DIR="$(brew --prefix openssl)"
 ```
