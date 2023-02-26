@@ -1,6 +1,5 @@
 node_modules
 build/*
 !build/Release/nodemgclient.node
-!build/Debug/nodemgclient.node
 .cache
 .github

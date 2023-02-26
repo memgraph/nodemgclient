@@ -9,6 +9,44 @@
 
 ## Installation
 
+As usual the package could be downloaded from npm by executing:
+```
+npm install @memgraph/client
+```
+At the moment only Linux shared library is shipped inside the package. For any
+other operating system or incompatible library version, please proceed with
+building from source as explained below.
+
+Once the package is properly installed, you can run a simple example:
+```
+const memgraph = require('@memgraph/client');
+
+(async () => {
+  try {
+    const connection = await memgraph.Connect({
+      host: 'localhost',
+      port: 7687,
+    });
+    await connection.ExecuteAndFetchAll("CREATE (:Graphs)-[:ARE]->(:Powerful);");
+    console.log(await connection.ExecuteAndFetchAll(
+      "MATCH (n)-[r]->(m) RETURN n, r, m;"));
+  } catch (e) {
+    console.log(e);
+  }
+})();
+```
+
+## Build from Source
+
+Below you can find instruction for Linux, MacOS and Windows. You'll know if the
+package was successfully build when there will be a file called
+`nodemgclient/Release/nodemgclient.node`, that's a shared library required to
+use the client.
+Once the library is in place you can pull it in your project just by running:
+```
+npm install <path-to-the-repo>
+```
+
 ### Build from Source on Linux
 
 To install `nodemgclient` from source you will need:
@@ -62,7 +100,7 @@ because of the header files.
 
 NOTE: Compilation does NOT work yet under MinGW.
 
-## Build from Source on MacOS
+### Build from Source on MacOS
 
 To build on MacOS it's required to install the `openssl` package, e.g.:
 ```

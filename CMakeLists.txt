@@ -12,7 +12,7 @@ cmake_minimum_required(VERSION 3.10)
 #   The following does not work because CMake changes the string to be Windows path.
 #   set(CMAKE_SHARED_LINKER_FLAGS "/DELAYLOAD:/c/Program\\ Files/nodejs/node.exe")
 
-project(nodemgclient VERSION 0.1.2)
+project(nodemgclient VERSION 0.1.3)
 
 if (WIN32 AND MINGW)
     message(FATAL_ERROR "ON WINDOWS BUILD UNDER MINGW NOT YET POSSIBLE")
